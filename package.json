@@ -1,0 +1,34 @@
+{
+  "name": "game-bucket",
+  "version": "1.0.0",
+  "description": "Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)!",
+  "main": "index.js",
+  "dependencies": {
+    "pocket-physics": "^4.0.0",
+    "science-halt": "^0.2.0"
+  },
+  "devDependencies": {
+    "babel-plugin-syntax-object-rest-spread": "^6.8.0",
+    "babel-plugin-transform-object-rest-spread": "^6.8.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-es2015-rollup": "^1.1.1",
+    "babelrc-rollup": "^1.1.0",
+    "rollup": "^0.32.2",
+    "rollup-plugin-babel": "^2.6.1",
+    "rollup-plugin-commonjs": "^3.1.0",
+    "rollup-plugin-node-resolve": "^1.7.1",
+    "rollup-plugin-replace": "^1.1.0",
+    "rollup-watch": "^2.4.0",
+    "uglify-js": "^2.6.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "uglify": "uglifyjs bundle.js --compress --mangle -o bundle.min.js && mv -f bundle.min.js bundle.js",
+    "uglify-view": "uglifyjs bundle.js --compress --mangle --beautify",
+    "zip": "NODE_ENV=production npm run build && npm run uglify && zip -X -r game.zip index.html bundle.js && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
+  },
+  "author": "Drew Petersen <senofpeter@gmail.com>",
+  "license": "MIT"
+}
