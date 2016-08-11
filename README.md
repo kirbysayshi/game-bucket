@@ -19,12 +19,23 @@ Usage
 
 Fork this repo, then add / change code in index.js as you see fit! There are two dependencies included, but you can remove those. Rollup ensures that only code you `import` is included!
 
-- Build the `bundle.js`: `npm run build`
-- Watch for fast rebuilds: `npm run watch`
-- See what the compiled JS will look like: `npm run uglify-view`
-- How close are you to the limit? (also creates a zip suitable for JS13K): `npm run zip`
+The default branch for this repo is `gh-pages`, so it's easy to share your game as well! For example, [index.html](index.html) is available at [[gh-username].github.io/game-bucket/index.html](http://kirbysayshi.github.io/game-bucket/index.html)!
 
-The default branch for this repo is `gh-pages`, so it's easy to share your game as well!
+### `npm run zip`
+
+How close are you to the limit? Compiles in production mode, and creates a zip suitable for JS13K!
+
+### `npm run build`
+
+Build the `bundle.js`. Use `NODE_ENV=production npm run build` to remove debug / runtime checks (similar to how [React does it](https://facebook.github.io/react/downloads.html#npm)).
+
+### `npm run watch`
+
+Rebuild quickly for development mode!
+
+### `npm run uglify-view`
+
+See what the compiled JS will look like, to make sure rollup is treeshaking / hoisting as expected and that dead code is being eliminated. Requires `bundle.js` to exist.
 
 LICENSE
 -------
