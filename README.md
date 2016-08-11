@@ -19,6 +19,7 @@ Usage
 
 Fork this repo, then add / change code in index.js as you see fit! There are two dependencies included, but you can remove those. Rollup ensures that only code you `import` is included!
 
+- Build the `bundle.js`: `npm run build`
 - Watch for fast rebuilds: `npm run watch`
 - See what the compiled JS will look like: `npm run uglify-view`
 - How close are you to the limit? (also creates a zip suitable for JS13K): `npm run zip`
