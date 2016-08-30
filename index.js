@@ -1,3 +1,6 @@
+import { rngFloat, tetris } from './lib/rng';
+import loadImage from './lib/load-image';
+import Screen from './lib/screen';
 import {
   Entity,
   System,
@@ -10,74 +13,101 @@ import {
 } from './lib/time';
 import { Loop } from './lib/loop';
 
-import accelerate from 'pocket-physics/accelerate2d';
-import inertia from 'pocket-physics/inertia2d';
+loadImage('./assets/TGC22_Tiles4.png').then(img => init(img));
 
-// This is an "entity", aka a bag of data, with a special array named `tags`.
-// These tags mark an entity as processable by a system that has matching tags.
-// The system will only invoke its routine if an entity or entities has every
-// tag the system requires.
-const e1 = Entity({
-  tags: ['phys-no-col', 'draw-console'],
-  cpos: { x: 0, y: 0 },
-  ppos: { x: 0, y: 0 },
-  acel: { x: 10, y: 0 },
-});
+function init (img) {
 
-const physicsSystem = System((entities, dt) => {
-  // entities is passed in at call time from within.
-  // dt comes from calling the system manually below.
-  entities.forEach(e => {
-    // this will be removed during the build due to dead-code elimination.
-    // Having this check will hopefully prevent typos during dev?
-    if (process.env.NODE_ENV !== 'production') { systemPropReqs(e, 'cpos', 'ppos', 'acel'); }
-    accelerate(e, dt);
-    inertia(e);
-  })
-}, 'phys-no-col');
+  const smap = {
+    img,
+    tileWidth: 16,
+    tileHeight: 16,
+    cols: img.width / 16,
+    drawIndex: (ctx, idx) => {
 
-// this should be made more specific, such as "circleDraw" or "particleDraw" and should
-// receive some sort of drawing context as param.
-const drawSystem = System((entities, interp) => {
-  // entities is passed in at call time from within.
-  // interp comes from manually calling the system below.
-  entities.forEach(e => {
-    if (process.env.NODE_ENV !== 'production') { systemPropReqs(e, 'cpos', 'ppos'); }
-    console.log('x', e.ppos.x + (e.cpos.x - e.ppos.x) * interp);
-    console.log('y', e.ppos.y + (e.cpos.y - e.ppos.y) * interp);
-  })
-}, 'draw-console');
+    },
+    names: {
+      'm.0': 8,
+      'm.1': 20,
+      'm.2': 124,
+      'mech': 170,
+    },
+  };
 
+  const random = rngFloat(tetris());
 
-// schedule a callback for a specified "best effort" time in the future.
-schedule((scheduledDelay, actualDelay) => {
-  // destroy the entity after 3500 ms
-  // TODO: may need a "destroyEntityXSystem" that deallocs any props on the
-  // entity.
-  destroyEntity(e1);
-  console.log(e1);
-}, 3500);
+  const GRID_CELL_PX_WIDTH = 16;
+  const GRID_COLS = 8;
+  const GRID_ROWS = 10;
 
-const { stop } = Loop({
-  drawTime: 1000 / 60,
-  updateTime: 1000 / 30,
-  update: (dt) => {
-    tick(dt);
-    physicsSystem(dt);
-  },
-  draw: (interp) => {
-    drawSystem(interp);
-  },
-  onPanic: () => console.log('panic!'),
-  onFPS: (fps) => console.log(fps, 'fps'),
-});
+  const state = {
+    GRID_COLS,
+    GRID_ROWS,
+    cells: [],
+    screen: Screen(window.c, GRID_CELL_PX_WIDTH * GRID_COLS, GRID_CELL_PX_WIDTH * GRID_ROWS),
+    smap,
+    random,
+  };
 
-// Turn this into dead-code during production
-if (process.env.NODE_ENV !== 'production') {
-  window.addEventListener('keydown', e => {
-    if (e.which === 27) {
-      stop();
-      console.log('HALT IN THE NAME OF SCIENCE');
+  for (let i = 0; i < state.GRID_COLS * state.GRID_ROWS; i++) {
+    const cells = state.cells;
+    const r = random();
+    const cell = {
+      index: i,
+      row: Math.floor(i / state.GRID_COLS),
+      col: Math.floor(i % state.GRID_COLS),
+    };
+
+    cell.height = 0;
+
+    if (r <= 0.4 && r > 0.2) {
+      cell.height = random() > 0.5 ? 2 : 1;
     }
-  }, false);
+
+    if (r > 0 && r <= 0.2) {
+      cell.hp = Math.floor(random() * 100);
+    }
+
+    cells.push(cell)
+  }
+
+  renderMap(state.GRID_COLS, GRID_CELL_PX_WIDTH, state.cells, state.screen, state.smap);
+
+  /*
+    const map = state.cells.map((cell, i) => {
+    let s = '';
+    if (i % state.GRID_COLS === 0) s += '\n';
+    s += '';
+    if (cell.height == 2) s += 'O';
+    if (cell.height == 1) s += 'o';
+    if (cell.hp) s += '•';
+    if (!cell.height && !cell.hp) s += ' ';
+    s += '';
+    return s;
+  });
+
+  console.log(map.join(''));
+  */
+}
+
+function renderMap (GRID_COLS, GRID_CELL_PX_WIDTH, cells, screen, smap) {
+
+  const cellHeight = GRID_CELL_PX_WIDTH;
+
+  cells.map((cell, i) => {
+    const spriteIdx = smap.names['m.' + cell.height];
+    const row = Math.floor(spriteIdx / smap.cols);
+    const col = spriteIdx % smap.cols;
+
+    const sx = col * smap.tileWidth;
+    const sy = row * smap.tileHeight;
+
+    const dx = cellHeight * (i % GRID_COLS);
+    const dy = cellHeight * Math.floor(i / GRID_COLS);
+
+    screen.ctx.drawImage(
+      smap.img,
+      sx, sy, smap.tileWidth, smap.tileHeight,
+      dx, dy, cellHeight, cellHeight
+    )
+  });
 }
