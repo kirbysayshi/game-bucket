@@ -12,6 +12,8 @@ import {
   tick,
 } from './lib/time';
 import { Loop } from './lib/loop';
+import accelerate from 'pocket-physics/accelerate2d';
+import inertia from 'pocket-physics/inertia2d';
 
 loadImage('./assets/TGC22_Tiles4.png').then(img => init(img));
 
@@ -42,8 +44,11 @@ function init (img) {
   const state = {
     GRID_COLS,
     GRID_ROWS,
+    GRID_CELL_PX_WIDTH,
     cells: [],
-    screen: Screen(window.c, GRID_CELL_PX_WIDTH * GRID_COLS, GRID_CELL_PX_WIDTH * GRID_ROWS),
+    screen: Screen(window.c,
+      GRID_CELL_PX_WIDTH * GRID_COLS,
+      GRID_CELL_PX_WIDTH * GRID_ROWS),
     smap,
     random,
   };
@@ -70,7 +75,14 @@ function init (img) {
     cells.push(cell)
   }
 
-  renderMap(state.GRID_COLS, GRID_CELL_PX_WIDTH, state.cells, state.screen, state.smap);
+  renderMap(state.GRID_COLS, state.GRID_CELL_PX_WIDTH, state.cells, state.screen, state.smap);
+
+  const p1 = Entity({
+    cpos: { x: 0, y: 0, },
+    ppos: { x: 0, y: 0, },
+    acel: { x: 10, y: 0, },
+    tags: ['acel', 'inertia', ]
+  });
 
   /*
     const map = state.cells.map((cell, i) => {
@@ -87,6 +99,44 @@ function init (img) {
 
   console.log(map.join(''));
   */
+
+  //document.addEventListener('keydown', )
+
+  const turnEnergySys = System((entities, dt) => {
+    entities.forEach(e => {
+      
+    });
+  }, 'turn-energy');
+
+  const acelSys = System((entities, dt) => {
+    entities.forEach(e => accelerate(e, dt));
+  }, 'acel');
+
+  const inertiaSys = System((entities) => {
+    entities.forEach(e => inertia(e));
+  }, 'inertia');
+
+  const dt = 16;
+
+  acelSys(16);
+  inertiaSys();
+  console.log(p1.cpos);
+
+  const loop = Loop({
+    drawTime: 1000 / 60,
+    updateTime: 1000 / 60,
+    draw: (interpolation) => {},
+    update: (dt) => {
+      turnEnergySys();
+    },
+  })
+
+  document.addEventListener('keydown', e => {
+    if (e.which === 27) {
+      loop.stop();
+      console.log('HALT!')
+    }
+  }, false);
 }
 
 function renderMap (GRID_COLS, GRID_CELL_PX_WIDTH, cells, screen, smap) {
