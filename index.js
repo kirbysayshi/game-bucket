@@ -1,163 +1,235 @@
-import { rngFloat, tetris } from './lib/rng';
-import loadImage from './lib/load-image';
 import Screen from './lib/screen';
-import {
-  Entity,
-  System,
-  destroyEntity,
-  systemPropReqs
-} from './lib/ces';
-import {
-  schedule,
-  tick,
-} from './lib/time';
-import { Loop } from './lib/loop';
-import accelerate from 'pocket-physics/accelerate2d';
-import inertia from 'pocket-physics/inertia2d';
 
-loadImage('./assets/TGC22_Tiles4.png').then(img => init(img));
+// Espresso: the coffee beverage produced by a pump or lever espresso machine. This Italian word describes a beverage made from 7 grams (+/- 2 grams) of finely ground coffee, producing 1-1.5 ounces (30-45ml) of extracted beverage under 9 bar (135psi) of brewing pressure at brewing temperatures of between 194 and 204 degrees Fahrenheit, over a period of 25 seconds (+/- 5 seconds) of brew time. Espresso is what this whole definition list is about!
 
-function init (img) {
+function tetris () {
+  var value = 0x8988;
+  return function() {
+    var bit1 = (value >> 1) & 1;
+    var bit9 = (value >> 9) & 1;
+    var leftmostBit = bit1 ^ bit9;
+    return (value = ((leftmostBit << 15) | (value >>> 1)) >>> 0);
+  }
+}
 
-  const smap = {
-    img,
-    tileWidth: 16,
-    tileHeight: 16,
-    cols: img.width / 16,
-    drawIndex: (ctx, idx) => {
+function rngFloat (rng) {
+  return () => {
+    return (rng() - 2) / 65534;
+  }
+}
 
-    },
-    names: {
-      'm.0': 8,
-      'm.1': 20,
-      'm.2': 124,
-      'mech': 170,
-    },
+// naivedux! https://github.com/jomaxx/naivedux
+function Store(reducer, initialState) {
+  let state = initialState;
+  let listeners = [];
+
+  this.getState = () => state;
+
+  this.dispatch = (action) => {
+    if (typeof action === 'function') return action(this.dispatch, this.getState);
+    state = reducer(state, action);
+    listeners.forEach(listener => listener());
+    return action;
   };
 
-  const random = rngFloat(tetris());
+  this.subscribe = (fn) => {
+    listeners.push(fn);
 
-  const GRID_CELL_PX_WIDTH = 16;
-  const GRID_COLS = 8;
-  const GRID_ROWS = 10;
-
-  const state = {
-    GRID_COLS,
-    GRID_ROWS,
-    GRID_CELL_PX_WIDTH,
-    cells: [],
-    screen: Screen(window.c,
-      GRID_CELL_PX_WIDTH * GRID_COLS,
-      GRID_CELL_PX_WIDTH * GRID_ROWS),
-    smap,
-    random,
-  };
-
-  for (let i = 0; i < state.GRID_COLS * state.GRID_ROWS; i++) {
-    const cells = state.cells;
-    const r = random();
-    const cell = {
-      index: i,
-      row: Math.floor(i / state.GRID_COLS),
-      col: Math.floor(i % state.GRID_COLS),
+    return () => {
+      listeners = listeners.filter(listener => listener !== fn);
     };
+  };
 
-    cell.height = 0;
+  this.dispatch({ type: '@@INIT'});
+}
 
-    if (r <= 0.4 && r > 0.2) {
-      cell.height = random() > 0.5 ? 2 : 1;
+function reducer (state, action) {
+  
+  // TODO: figure out some sort of immutability helper. maybe just ... ?
+
+  if (action.type === 'NEW_CUSTOMER') {
+    state.customers.push({
+      name: action.data.name,
+      wants: action.data.wants,
+    });
+  }
+  
+  if (action.type === 'SWIPE_UP') {
+    const row = state.player.position.rows -= 1;
+    if (row < 0) {
+      state.player.position.rows = 0;
     }
-
-    if (r > 0 && r <= 0.2) {
-      cell.hp = Math.floor(random() * 100);
+  }
+  
+  if (action.type === 'SWIPE_DOWN') {
+    const row = state.player.position.rows += 1;
+    if (row > state.player.field.rows) {
+      state.player.position.rows = state.player.field.rows;
     }
+  }
+  
+  return state;
+}
 
-    cells.push(cell)
+
+const SPRITE_SIZE = 24;
+const SPRITE_COLS = 9;
+const SPRITE_ROWS = 16;
+
+const INITIAL_STATE = {
+  SPRITE_SIZE,
+  SPRITE_COLS,
+  SPRITE_ROWS,
+  screen: Screen(window.c, SPRITE_SIZE * SPRITE_COLS, SPRITE_SIZE * SPRITE_ROWS),
+  rng: rngFloat(tetris()),
+
+  customers: [],
+  orders: [],
+  stations: {
+    offset: {
+      cols: 2,
+      rows: 0,
+    },
+    entries: [
+      { type: 'ORDER_COUNTER', name: 'The Register', wh: { cols: 1, rows: 2, }, },
+      { type: 'STEAMER', name: 'Milk Steamer', wh: { cols: 1, rows: 1, }, has: { type: 'CLEAN_FROTHING_PITCHER' } },
+      { type: 'GROUPHEAD', name: 'Grouphead', wh: { cols: 1, rows: 1, }, has: { type: 'CLEAN_PORTAFILTER' } },
+      { type: 'GROUPHEAD', name: 'Grouphead', wh: { cols: 1, rows: 1, }, has: { type: 'CLEAN_PORTAFILTER' } },
+      { type: 'STEAMER', name: 'Milk Steamer', wh: { cols: 1, rows: 1, }, has: { type: 'CLEAN_FROTHING_PITCHER' } },
+      { type: 'GRINDER', name: 'Grinder', wh: { cols: 1, rows: 1, }, setting: 20 }, // also tamps?
+      { type: 'HOT_WATER', name: 'Hot Water', wh: { cols: 1, rows: 1, }, },
+      { type: 'TRASH', name: 'Trash / Grounds Chute', wh: { cols: 1, rows: 1, }, },
+      { type: 'EMPTY_COUNTER', name: 'Counter', wh: { cols: 1, rows: 1, }, has: null, },
+      { type: 'PICKUP_COUNTER', name: 'The Counter', wh: { cols: 1, rows: 1, }, has: [] },
+    ],
+  },
+  player: {
+    position: {
+      cols: 0,
+      rows: 0,
+    },
+
+    offset: {
+      cols: 0,
+      rows: 0,
+    },
+
+    // basically a limit to how the player can move.
+    field: {
+      cols: 1,
+      rows: 10, // should match up with sum(stations heights)
+    },
+
+    has: [
+    // { type: 'DIRTY_PORTAFILTER' }
+    // { type: 'DIRTY_FROTHING_PITCHER' }
+    // { type: 'CLEAN_FROTHING_PITCHER' }
+    // { type: 'DIRTY_CUP' }
+    // { type: 'EMPTY_CUP' }
+    // { type: 'CAPPUCCINO', milkFroth: 50, milkTemp: 140-150F, espressoPull: 27, espressoTemp: 199, BAR: 9, tamp: 6 }
+    // { type: 'CAFFE_LATTE', values? }
+    // { type: 'MACCHIATTO', values? }
+    // { type: 'AMERICANO', values? }
+    // tamped: how much time was spent tamping / pressure
+    // grounds: how finely ground the grounds are
+    // { type: 'FILLED_PORTAFILTER', tamped: 20, grounds: 50 },
+    // { type: 'CLEAN_PORTAFILTER' }
+    ]
+  }
+};
+
+const store = new Store(reducer, INITIAL_STATE);
+
+store.subscribe(() => {
+  let debug = window.d;
+  if (!debug) {
+    debug = document.createElement('pre');
+    debug.id = 'd';
+    debug.style = 'display:block;position:absolute;color:white;overflow:scroll;z-index:9000;height:100%;width:100%;top:0;left:0';
+    document.body.appendChild(debug);
   }
 
-  renderMap(state.GRID_COLS, state.GRID_CELL_PX_WIDTH, state.cells, state.screen, state.smap);
+  // eventually only do this if a key is pressed
+  debug.innerHTML = JSON.stringify(store.getState(), null, '  ');
 
-  const p1 = Entity({
-    cpos: { x: 0, y: 0, },
-    ppos: { x: 0, y: 0, },
-    acel: { x: 10, y: 0, },
-    tags: ['acel', 'inertia', ]
+  render(1, store.getState());
+});
+
+document.body.addEventListener('keydown', e => {
+
+  if ([37,38,39,40].indexOf(e.which) > -1) e.preventDefault();
+
+  // up arrow
+  if (e.which === 38) store.dispatch({ type: 'SWIPE_UP' });
+  // down arrow
+  if (e.which === 40) store.dispatch({ type: 'SWIPE_DOWN' });
+
+  // These may need to be more complicated actions, such as dispatching
+  // and error animation / sound if already holding something or incompatible
+  // right arrow
+  if (e.which === 39) store.dispatch({ type: 'ACTIVATE' });
+  // left arrow
+  if (e.which === 37) store.dispatch({ type: 'PICKUP' });
+}, false);
+
+function render (interp, state) {
+
+  state.screen.ctx.clearRect(0, 0, screen.width, screen.height);
+
+  renderPlayer(interp, state);
+  renderStations(interp, state);
+}
+
+function renderPlayer (interp, state) {
+  const {
+    screen,
+    player,
+    SPRITE_SIZE,
+  } = state;
+
+  const { offset } = player;
+  const { cols, rows } = player.position;
+  screen.ctx.fillStyle = 'white';
+  screen.ctx.fillRect(
+    (offset.cols + cols) * SPRITE_SIZE,
+    (offset.rows + rows) * SPRITE_SIZE,
+    SPRITE_SIZE, SPRITE_SIZE
+  );
+}
+
+function renderStations (interp, state) {
+  const {
+    screen,
+    stations,
+    SPRITE_SIZE,
+  } = state;
+
+  const { offset, entries } = stations;
+  const col = offset.cols;
+  let rowsTotal = offset.rows;
+
+  entries.forEach((station, idx) => {
+    const row = rowsTotal;
+    const blue = Math.floor((idx / entries.length) * 255);
+    screen.ctx.fillStyle = 'rgba(255,50,' + blue + ',1)';
+    screen.ctx.fillRect(
+      col * SPRITE_SIZE,
+      row * SPRITE_SIZE,
+      SPRITE_SIZE, station.wh.rows * SPRITE_SIZE
+    );
+    rowsTotal += station.wh.rows;
   });
+}
 
-  /*
-    const map = state.cells.map((cell, i) => {
-    let s = '';
-    if (i % state.GRID_COLS === 0) s += '\n';
-    s += '';
-    if (cell.height == 2) s += 'O';
-    if (cell.height == 1) s += 'o';
-    if (cell.hp) s += '•';
-    if (!cell.height && !cell.hp) s += ' ';
-    s += '';
-    return s;
-  });
-
-  console.log(map.join(''));
-  */
-
-  //document.addEventListener('keydown', )
-
-  const turnEnergySys = System((entities, dt) => {
-    entities.forEach(e => {
-      
-    });
-  }, 'turn-energy');
-
-  const acelSys = System((entities, dt) => {
-    entities.forEach(e => accelerate(e, dt));
-  }, 'acel');
-
-  const inertiaSys = System((entities) => {
-    entities.forEach(e => inertia(e));
-  }, 'inertia');
-
-  const dt = 16;
-
-  acelSys(16);
-  inertiaSys();
-  console.log(p1.cpos);
-
-  const loop = Loop({
-    drawTime: 1000 / 60,
-    updateTime: 1000 / 60,
-    draw: (interpolation) => {},
-    update: (dt) => {
-      turnEnergySys();
-    },
-  })
-
-  document.addEventListener('keydown', e => {
-    if (e.which === 27) {
-      loop.stop();
-      console.log('HALT!')
+const newCustomer = () => (dispatch, getState) => (dispatch({
+  type: 'NEW_CUSTOMER',
+  data: {
+    name: getState().rng() > 0.5 ? 'James' : 'Lily',
+    wants: {
+      type: getState().rng() > 0.5 ? 'AMERICANO' : 'ESPRESSO',
     }
-  }, false);
-}
+  }
+}));
 
-function renderMap (GRID_COLS, GRID_CELL_PX_WIDTH, cells, screen, smap) {
-
-  const cellHeight = GRID_CELL_PX_WIDTH;
-
-  cells.map((cell, i) => {
-    const spriteIdx = smap.names['m.' + cell.height];
-    const row = Math.floor(spriteIdx / smap.cols);
-    const col = spriteIdx % smap.cols;
-
-    const sx = col * smap.tileWidth;
-    const sy = row * smap.tileHeight;
-
-    const dx = cellHeight * (i % GRID_COLS);
-    const dy = cellHeight * Math.floor(i / GRID_COLS);
-
-    screen.ctx.drawImage(
-      smap.img,
-      sx, sy, smap.tileWidth, smap.tileHeight,
-      dx, dy, cellHeight, cellHeight
-    )
-  });
-}
+store.dispatch(newCustomer());
+store.dispatch(newCustomer());
