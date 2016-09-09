@@ -4,6 +4,7 @@
   "description": "Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)!",
   "main": "index.js",
   "dependencies": {
+    "naivedux": "^1.1.0",
     "pocket-physics": "^4.0.0",
     "science-halt": "^0.2.0"
   },
@@ -27,7 +28,7 @@
     "watch": "rollup -c -w",
     "uglify": "uglifyjs bundle.js --compress --mangle -o bundle.min.js && mv -f bundle.min.js bundle.js",
     "uglify-view": "uglifyjs bundle.js --compress --mangle --beautify",
-    "zip": "NODE_ENV=production npm run build && npm run uglify && zip -X -r game.zip index.html bundle.js assets && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
+    "zip": "rm -rf game.zip && NODE_ENV=production npm run build && npm run uglify && zip -X -r game.zip index.html bundle.js assets && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
   },
   "author": "Drew Petersen <senofpeter@gmail.com>",
   "license": "MIT"
