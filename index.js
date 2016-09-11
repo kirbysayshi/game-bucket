@@ -10,6 +10,7 @@ import drawStations from './src/draw-stations';
 import drawText from './src/draw-text';
 import drawCustomers from './src/draw-customers';
 import drawScore from './src/draw-score';
+import drawFloorTiles from './src/draw-floor-tiles';
 
 import {
   FONT_COLOR_WHITE,
@@ -125,6 +126,7 @@ function render (interp, state) {
   screen.ctx.fillStyle = '#333333';
   screen.ctx.fillRect(0, 0, screen.width, screen.height);
 
+  drawFloorTiles(interp, state);
   drawPlayer(interp, state);
   drawStations(interp, state);
   drawCustomers(interp, state);

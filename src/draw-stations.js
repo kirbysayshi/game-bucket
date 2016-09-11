@@ -1,4 +1,3 @@
-import { PICKUP_COUNTER } from './constants';
 import drawNamedTileAtColRow from './draw-named-tile-at-col-row';
 import drawProgressAtColRow from './draw-progress-at-col-row';
 

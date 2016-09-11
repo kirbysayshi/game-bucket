@@ -1,4 +1,4 @@
-//import { PICKUP_COUNTER } from './constants';
+import { ROWS_SPRITE_OFFSET } from './constants';
 import drawText from './draw-text';
 
 export default function drawCustomers (interp, state) {
@@ -15,6 +15,6 @@ export default function drawCustomers (interp, state) {
 
     drawText(state,
       (customer.paid ? '' : '█ ') + customer.name + ': ' + type,
-      cols, rows + 0.5);
+      cols, rows + ROWS_SPRITE_OFFSET);
   });
 }

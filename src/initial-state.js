@@ -12,6 +12,10 @@ import {
   PICKUP_COUNTER,
   CUP_COUNTER,
 
+  COUNTER_FLOOR,
+  SHOP_FLOOR,
+  DECORATIVE_PLANT,
+
   CLEAN_CUP,
   FILLED_CUP,
   CLEAN_PORTAFILTER,
@@ -20,6 +24,8 @@ import {
 
   BARISTA,
   CHECKMARK,
+
+  ROWS_SPRITE_OFFSET,
 
 } from './constants';
 
@@ -45,6 +51,9 @@ export default function initialState (cvs, tileImage, fontImage) {
     [TRASH]: { x: 0, y: 6 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [EMPTY_COUNTER]: { x: 0, y: 1 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [CUP_COUNTER]: { x: 0, y: 2 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [COUNTER_FLOOR]: { x: 0, y: 18 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [SHOP_FLOOR]: { x: 0, y: 17 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [DECORATIVE_PLANT]: { x: 0, y: 16 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
   };
 
   const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪:█';
@@ -86,7 +95,7 @@ export default function initialState (cvs, tileImage, fontImage) {
     stations: {
       offset: {
         cols: 2,
-        rows: 0.5,
+        rows: ROWS_SPRITE_OFFSET,
       },
       entries: [
         { type: ORDER_COUNTER, name: 'The Register', },
@@ -111,7 +120,7 @@ export default function initialState (cvs, tileImage, fontImage) {
 
       offset: {
         cols: 0,
-        rows: 0.5,
+        rows: ROWS_SPRITE_OFFSET,
       },
 
       // basically a limit to how the player can move.
