@@ -45,9 +45,9 @@ export default function initialState (cvs, tileImage, fontImage) {
     [EMPTY_COUNTER]: { x: 0, y: 14 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
   };
 
-  const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪';
+  const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪:';
   const fontChrWidths = {
-    2: 'ilI!.\'',
+    2: 'ilI!.\':',
     3: 't1',
     4: 'abcdefghjknopqrsuvxyzL?-',
     5: 'ABCDEFGHJKNOPRSUZ023456789& ',

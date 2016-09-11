@@ -7,6 +7,7 @@ import reducer from './src/reducer';
 import drawPlayer from './src/draw-player';
 import drawStations from './src/draw-stations';
 import drawText from './src/draw-text';
+import drawCustomers from './src/draw-customers';
 
 import { FONT_COLOR_WHITE, FONT_COLOR_BLACK, } from './src/constants';
 
@@ -73,6 +74,10 @@ function boot () {
 
     store.dispatch(newCustomer());
     store.dispatch(newCustomer());
+    store.dispatch(newCustomer());
+    store.dispatch(newCustomer());
+    store.dispatch(newCustomer());
+    store.dispatch(newCustomer());
 
   });
 }
@@ -81,8 +86,9 @@ function render (interp, state) {
   state.screen.ctx.clearRect(0, 0, screen.width, screen.height);
   drawPlayer(interp, state);
   drawStations(interp, state);
+  drawCustomers(interp, state);
 
-  drawText(state, 'Cappuccino', 3, 8, FONT_COLOR_BLACK);
+  //drawText(state, 'Cappuccino', 3, 8, FONT_COLOR_BLACK);
 }
 
 boot();

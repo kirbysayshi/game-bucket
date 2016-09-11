@@ -7,9 +7,12 @@ export default function reducer (state, action) {
   }
 
   if (action.type === 'NEW_CUSTOMER') {
+    const { SPRITE_COLS } = state;
     state.customers.push({
       name: action.data.name,
       wants: action.data.wants,
+      // TODO: compute all customers positions when a new one comes in
+      position: { rows: state.customers.length, cols: Math.floor(SPRITE_COLS / 2) },
     });
   }
   
