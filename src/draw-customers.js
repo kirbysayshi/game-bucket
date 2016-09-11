@@ -13,6 +13,8 @@ export default function drawCustomers (interp, state) {
     const { type } = customer.wants;
     const { cols, rows } = customer.position;
 
-    drawText(state, customer.name + ': ' + type, cols, rows);
+    drawText(state,
+      (customer.paid ? '' : '█ ') + customer.name + ': ' + type,
+      cols, rows + 0.5);
   });
 }

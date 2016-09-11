@@ -10,6 +10,7 @@ import {
   TRASH,
   EMPTY_COUNTER,
   PICKUP_COUNTER,
+  CUP_COUNTER,
 
   CLEAN_CUP,
   FILLED_CUP,
@@ -28,29 +29,30 @@ export default function initialState (cvs, tileImage, fontImage) {
   const SPRITE_ROWS = 16;
 
   const tileMap = {
-    [STEAMER]: { x: 0, y: 0 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [GROUPHEAD]: { x: 0, y: 1 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [HOT_WATER]: { x: 0, y: 2 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [GRINDER]: { x: 0, y: 3 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [CLEAN_CUP]: { x: 0, y: 4 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [FILLED_CUP]: { x: 0, y: 5 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [CLEAN_PORTAFILTER]: { x: 0, y: 6 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [FILLED_PORTAFILTER]: { x: 0, y: 7 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [ATTACHED_PORTAFILTER]: { x: 0, y: 8 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, }, // half
-    [ORDER_COUNTER]: { x: 0, y: 9 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [PICKUP_COUNTER]: { x: 0, y: 10 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [BARISTA]: { x: 0, y: 11 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [CHECKMARK]: { x: 0, y: 12 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [TRASH]: { x: 0, y: 13 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [EMPTY_COUNTER]: { x: 0, y: 14 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [STEAMER]: { x: 0, y: 5 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [GROUPHEAD]: { x: 0, y: 4 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [HOT_WATER]: { x: 0, y: 3 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [GRINDER]: { x: 0, y: 7 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [CLEAN_CUP]: { x: 0, y: 9 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [FILLED_CUP]: { x: 0, y: 10 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [CLEAN_PORTAFILTER]: { x: 0, y: 12 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [FILLED_PORTAFILTER]: { x: 0, y: 11 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    //[ATTACHED_PORTAFILTER]: { x: 0, y: 8 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, }, // half
+    [ORDER_COUNTER]: { x: 0, y: 0 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [PICKUP_COUNTER]: { x: 0, y: 8 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [BARISTA]: { x: 0, y: 13 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [CHECKMARK]: { x: 0, y: 99 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [TRASH]: { x: 0, y: 6 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [EMPTY_COUNTER]: { x: 0, y: 1 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [CUP_COUNTER]: { x: 0, y: 2 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
   };
 
-  const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪:';
+  const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪:█';
   const fontChrWidths = {
     2: 'ilI!.\':',
     3: 't1',
     4: 'abcdefghjknopqrsuvxyzL?-',
-    5: 'ABCDEFGHJKNOPRSUZ023456789& ',
+    5: 'ABCDEFGHJKNOPRSUZ023456789& █',
     6: 'mwMQTVWXY○✗❤★♪',
   }
 
@@ -78,22 +80,24 @@ export default function initialState (cvs, tileImage, fontImage) {
 
     customers: [],
     orders: [],
+
+    money: 0,
+
     stations: {
       offset: {
         cols: 2,
-        rows: 0,
+        rows: 0.5,
       },
       entries: [
-        { type: ORDER_COUNTER, name: 'The Register', wh: { cols: 1, rows: 2, }, },
-        { type: STEAMER, name: 'Milk Steamer', wh: { cols: 1, rows: 1, }, /*has: { type: 'CLEAN_FROTHING_PITCHER' }*/ },
-       // { type: GROUPHEAD, name: 'Grouphead', wh: { cols: 1, rows: 1, }, has: { type: 'CLEAN_PORTAFILTER' } },
-        { type: GROUPHEAD, name: 'Grouphead', wh: { cols: 1, rows: 1, }, has: { type: 'CLEAN_PORTAFILTER' } },
-        //{ type: STEAMER, name: 'Milk Steamer', wh: { cols: 1, rows: 1, }, has: { type: 'CLEAN_FROTHING_PITCHER' } },
-        { type: GRINDER, name: 'Grinder', wh: { cols: 1, rows: 1, }, setting: 20 }, // also tamps?
-        { type: HOT_WATER, name: 'Hot Water', wh: { cols: 1, rows: 1, }, },
-        { type: TRASH, name: 'Trash / Grounds Chute', wh: { cols: 1, rows: 1, }, },
-        { type: EMPTY_COUNTER, name: 'Counter', wh: { cols: 1, rows: 1, }, has: null, },
-        { type: PICKUP_COUNTER, name: 'The Counter', wh: { cols: 1, rows: 1, }, has: [] },
+        { type: ORDER_COUNTER, name: 'The Register', },
+        { type: EMPTY_COUNTER, name: 'Counter', has: null, },
+        { type: CUP_COUNTER, name: 'Cup Counter', },
+        { type: HOT_WATER, name: 'Hot Water', has: null, },
+        { type: GROUPHEAD, name: 'Grouphead', has: { type: CLEAN_PORTAFILTER, } },
+        { type: STEAMER, name: 'Milk Steamer', has: null, /*has: { type: 'CLEAN_FROTHING_PITCHER' }*/ },
+        { type: TRASH, name: 'Trash / Grounds Chute', },
+        { type: GRINDER, name: 'Grinder', setting: 20, has: null }, // also tamps?
+        { type: PICKUP_COUNTER, name: 'The Counter', has: [] },
       ],
     },
     player: {
@@ -104,16 +108,16 @@ export default function initialState (cvs, tileImage, fontImage) {
 
       offset: {
         cols: 0,
-        rows: 0,
+        rows: 0.5,
       },
 
       // basically a limit to how the player can move.
       field: {
         cols: 1,
-        rows: 10, // should match up with sum(stations heights)
+        rows: 8, // should match up with sum(stations heights - 1)
       },
 
-      has: [
+      has: null,
       // { type: 'DIRTY_PORTAFILTER' }
       // { type: 'DIRTY_FROTHING_PITCHER' }
       // { type: 'CLEAN_FROTHING_PITCHER' }
@@ -127,7 +131,6 @@ export default function initialState (cvs, tileImage, fontImage) {
       // grounds: how finely ground the grounds are
       // { type: 'FILLED_PORTAFILTER', tamped: 20, grounds: 50 },
       // { type: 'CLEAN_PORTAFILTER' }
-      ]
     }
   };
 

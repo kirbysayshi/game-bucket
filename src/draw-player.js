@@ -9,5 +9,12 @@ export default function drawPlayer (interp, state) {
   const { offset } = player;
   const { cols, rows } = player.position;
 
-  drawNamedTileAtColRow(state, BARISTA, offset.cols + cols, offset.rows + rows);
+  const drawCols = offset.cols + cols;
+  const drawRows = offset.rows + rows;
+
+  if (player.has) {
+    drawNamedTileAtColRow(state, player.has.type, drawCols + 0.5, drawRows);
+  }
+
+  drawNamedTileAtColRow(state, BARISTA, drawCols, drawRows);
 }

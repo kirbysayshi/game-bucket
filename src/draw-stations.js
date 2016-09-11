@@ -29,6 +29,6 @@ export default function drawStations (interp, state) {
       });
     }
 
-    rowsTotal += station.wh.rows;
+    rowsTotal += 1;
   });
 }

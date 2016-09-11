@@ -8,8 +8,18 @@ import drawPlayer from './src/draw-player';
 import drawStations from './src/draw-stations';
 import drawText from './src/draw-text';
 import drawCustomers from './src/draw-customers';
+import drawScore from './src/draw-score';
 
-import { FONT_COLOR_WHITE, FONT_COLOR_BLACK, } from './src/constants';
+import {
+  FONT_COLOR_WHITE,
+  FONT_COLOR_BLACK,
+
+  SWIPE_UP,
+  SWIPE_DOWN,
+  ACTIVATE,
+  DEBUG_TOGGLE,
+  NEW_CUSTOMER,
+} from './src/constants';
 
 // Espresso: the coffee beverage produced by a pump or lever espresso machine. This Italian word describes a beverage made from 7 grams (+/- 2 grams) of finely ground coffee, producing 1-1.5 ounces (30-45ml) of extracted beverage under 9 bar (135psi) of brewing pressure at brewing temperatures of between 194 and 204 degrees Fahrenheit, over a period of 25 seconds (+/- 5 seconds) of brew time. Espresso is what this whole definition list is about!
 
@@ -47,23 +57,23 @@ function boot () {
       if ([37,38,39,40].indexOf(e.which) > -1) e.preventDefault();
 
       // up arrow
-      if (e.which === 38) store.dispatch({ type: 'SWIPE_UP' });
+      if (e.which === 38) store.dispatch({ type: SWIPE_UP });
       // down arrow
-      if (e.which === 40) store.dispatch({ type: 'SWIPE_DOWN' });
+      if (e.which === 40) store.dispatch({ type: SWIPE_DOWN });
 
       // These may need to be more complicated actions, such as dispatching
       // and error animation / sound if already holding something or incompatible
       // right arrow
-      if (e.which === 39) store.dispatch({ type: 'ACTIVATE' });
+      if (e.which === 39) store.dispatch({ type: ACTIVATE });
       // left arrow
-      if (e.which === 37) store.dispatch({ type: 'PICKUP' });
+      //if (e.which === 37) store.dispatch({ type: 'PICKUP' });
 
       // < + shift + cmd (mac, alt on windows)
-      if (e.which === 188 && e.metaKey && e.shiftKey) store.dispatch({ type: 'DEBUG_TOGGLE' });
+      if (e.which === 188 && e.metaKey && e.shiftKey) store.dispatch({ type: DEBUG_TOGGLE });
     }, false);
 
     const newCustomer = () => (dispatch, getState) => (dispatch({
-      type: 'NEW_CUSTOMER',
+      type: NEW_CUSTOMER,
       data: {
         name: getState().rng() > 0.5 ? 'James' : 'Lily',
         wants: {
@@ -83,10 +93,25 @@ function boot () {
 }
 
 function render (interp, state) {
-  state.screen.ctx.clearRect(0, 0, screen.width, screen.height);
+  const { screen, SPRITE_ROWS, SPRITE_COLS, } = state;
+  screen.ctx.fillStyle = '#333333';
+  screen.ctx.fillRect(0, 0, screen.width, screen.height);
+
   drawPlayer(interp, state);
   drawStations(interp, state);
   drawCustomers(interp, state);
+  drawScore(interp, state);
+
+  const rowHeight = screen.height / SPRITE_ROWS;
+  screen.ctx.save();
+  screen.ctx.fillStyle = 'rgba(32, 32, 32, 0.2)';
+  screen.ctx.beginPath();
+  screen.ctx.moveTo(screen.width, rowHeight * 2);
+  screen.ctx.lineTo(0, rowHeight * 10);
+  screen.ctx.lineTo(0, screen.height);
+  screen.ctx.lineTo(screen.width, screen.height);
+  screen.ctx.fill();
+  screen.ctx.restore();
 }
 
 boot();
