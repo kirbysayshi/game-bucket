@@ -10,6 +10,9 @@ import {
   GROUPHEAD,
   CLEAN_PORTAFILTER,
   FILLED_PORTAFILTER,
+  FILLED_COFFEE_CUP,
+  FILLED_CAPPUCCINO_CUP,
+  FILLED_ESPRESSO_CUP,
   CLEAN_CUP,
   GRINDER,
   ORDER_COUNTER,
@@ -74,7 +77,12 @@ export default function reducer (state, action) {
       const station = stations.entries[i];
       if (!station.timer) continue;
 
-      if (station.timer.value >= station.timer.max) {
+      if (
+        station.timer.active
+        && station.timer.value >= station.timer.max
+      ) {
+
+        station.timer.active = false;
 
         // Only put transformation logic here. Resetting the timer should only
         // happen when the item is removed / station reactivated.
@@ -88,21 +96,19 @@ export default function reducer (state, action) {
       // Player is activating in front of the station
       if (
         station.timer.hold
+        && station.timer.active
         && playerStation === station
         && player.isActivating
-        && station.timer.value < station.timer.max
       ) {
         station.timer.value += 1;
-        console.log(station.timer.value);
       }
 
       // Non-hold stations
       if (
         !station.timer.hold
-        && station.timer.value < station.timer.max
+        && station.timer.active
       ) {
         station.timer.value += 1;
-        console.log(station.timer.value);
       }
     }
 
@@ -116,6 +122,16 @@ export default function reducer (state, action) {
     const playerStation = stationInFrontOfPlayer(state);
 
     if (playerStation.type === GROUPHEAD) {
+
+      // BREW COFFEE!
+      if (
+        hasItemOfType(playerStation, FILLED_PORTAFILTER)
+        && hasItemOfType(playerStation, CLEAN_CUP)
+      ) {
+        playerStation.timer.active = true;
+        player.isActivating = true;
+        return state;
+      }
 
       if (
         hasItemOfType(playerStation, CLEAN_PORTAFILTER)
@@ -134,6 +150,17 @@ export default function reducer (state, action) {
           hasItemOfType(playerStation, CLEAN_PORTAFILTER)
           || hasItemOfType(playerStation, FILLED_PORTAFILTER)
         )
+      ) {
+        takeItemOfType(playerStation, player, firstItemType(player));
+        return state;
+      }
+
+      if (
+        hasItemOfType(player, CLEAN_CUP)
+        && !hasItemOfType(playerStation, CLEAN_CUP)
+        && !hasItemOfType(playerStation, FILLED_COFFEE_CUP)
+        && !hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
+        && !hasItemOfType(playerStation, FILLED_CAPPUCCINO_CUP)
       ) {
         takeItemOfType(playerStation, player, firstItemType(player));
         return state;
@@ -170,6 +197,7 @@ export default function reducer (state, action) {
     ) {
       // begin filling + timer
       player.isActivating = true;
+      playerStation.timer.active = true;
       return state;
     }
 
@@ -219,12 +247,13 @@ function takeItemOfType (taker, giver, type) {
   const idx = giver.has.findIndex(item => item.type === type);
   if (idx === -1) return;
   const item = giver.has.splice(idx, 1);
-  taker.has.push(item[0]); // TODO: sorting?
+  taker.has.push(item[0]);
+  taker.has.sort(defaultItemSort);
 }
 
 function addItemOfType (taker, type) {
-  // TODO: sorting?
   taker.has.push({ type });
+  taker.has.sort(defaultItemSort);
 }
 
 function hasItemOfType (giver, type) {
@@ -243,4 +272,18 @@ function emptyItems (giver) {
 
 function firstItemType(giver) {
   return giver.has[0].type;
+}
+
+function defaultItemSort (a, b) {
+  // Always attempt to sort the portafilter higher in the array,
+  // since later things are drawn last.
+  if (a.type === CLEAN_PORTAFILTER
+    || a.type === FILLED_PORTAFILTER
+  ) return 1;
+
+  if (b.type === CLEAN_PORTAFILTER
+    || b.type === FILLED_PORTAFILTER
+  ) return -1;
+
+  return 0;
 }
