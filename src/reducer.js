@@ -76,6 +76,7 @@ export default function reducer (state, action) {
         const customer = state.customers[i];
         if (!customer.paid) {
           state.money += 5; // how much is each drink!?
+          customer.paid = true;
           break;
         }
       }
@@ -83,10 +84,20 @@ export default function reducer (state, action) {
 
     if (
       station.type === GRINDER
+      && station.has
+      && station.has.type === CLEAN_PORTAFILTER
+    ) {
+      // begin filling + timer
+    }
+
+    if (
+      station.type === GRINDER
       && player.has
       && player.has.type === CLEAN_PORTAFILTER
     ) {
-      // activate timing mechanism?
+      station.has = player.has;
+      player.has = null;
+      // should return here...
     }
   }
 

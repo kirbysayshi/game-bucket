@@ -96,7 +96,7 @@ export default function initialState (cvs, tileImage, fontImage) {
         { type: GROUPHEAD, name: 'Grouphead', has: { type: CLEAN_PORTAFILTER, } },
         { type: STEAMER, name: 'Milk Steamer', has: null, /*has: { type: 'CLEAN_FROTHING_PITCHER' }*/ },
         { type: TRASH, name: 'Trash / Grounds Chute', },
-        { type: GRINDER, name: 'Grinder', setting: 20, has: null }, // also tamps?
+        { type: GRINDER, name: 'Grinder', setting: 20, has: null, timer: 0, timerMax: 10 }, // also tamps?
         { type: PICKUP_COUNTER, name: 'The Counter', has: [] },
       ],
     },
