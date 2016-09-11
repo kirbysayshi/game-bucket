@@ -90,13 +90,13 @@ export default function initialState (cvs, tileImage, fontImage) {
       },
       entries: [
         { type: ORDER_COUNTER, name: 'The Register', },
-        { type: EMPTY_COUNTER, name: 'Counter', has: null, },
+        { type: EMPTY_COUNTER, name: 'Counter', has: [], },
         { type: CUP_COUNTER, name: 'Cup Counter', },
-        { type: HOT_WATER, name: 'Hot Water', has: null, },
-        { type: GROUPHEAD, name: 'Grouphead', has: { type: CLEAN_PORTAFILTER, } },
-        { type: STEAMER, name: 'Milk Steamer', has: null, /*has: { type: 'CLEAN_FROTHING_PITCHER' }*/ },
+        { type: HOT_WATER, name: 'Hot Water', has: [], },
+        { type: GROUPHEAD, name: 'Grouphead', has: [{ type: CLEAN_PORTAFILTER, }] },
+        { type: STEAMER, name: 'Milk Steamer', has: [], /*has: { type: 'CLEAN_FROTHING_PITCHER' }*/ },
         { type: TRASH, name: 'Trash / Grounds Chute', },
-        { type: GRINDER, name: 'Grinder', setting: 20, has: null, timer: { value: 0, max: 10, hold: true }, }, // also tamps?
+        { type: GRINDER, name: 'Grinder', setting: 20, has: [], timer: { value: 0, max: 10, hold: true }, }, // also tamps?
         { type: PICKUP_COUNTER, name: 'The Counter', has: [] },
       ],
     },
@@ -120,7 +120,7 @@ export default function initialState (cvs, tileImage, fontImage) {
         rows: 8, // should match up with sum(stations heights - 1)
       },
 
-      has: null,
+      has: [],
       // { type: 'DIRTY_PORTAFILTER' }
       // { type: 'DIRTY_FROTHING_PITCHER' }
       // { type: 'CLEAN_FROTHING_PITCHER' }

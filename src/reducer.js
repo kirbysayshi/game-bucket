@@ -10,8 +10,12 @@ import {
   GROUPHEAD,
   CLEAN_PORTAFILTER,
   FILLED_PORTAFILTER,
+  CLEAN_CUP,
   GRINDER,
   ORDER_COUNTER,
+  TRASH,
+  CUP_COUNTER,
+
 } from './constants';
 
 export default function reducer (state, action) {
@@ -75,7 +79,9 @@ export default function reducer (state, action) {
         // Only put transformation logic here. Resetting the timer should only
         // happen when the item is removed / station reactivated.
         if (station.type === GRINDER) {
-          station.has = { type: FILLED_PORTAFILTER }
+          emptyItems(station);
+          addItemOfType(station, FILLED_PORTAFILTER);
+          return state;
         }
       }
 
@@ -110,18 +116,40 @@ export default function reducer (state, action) {
     const playerStation = stationInFrontOfPlayer(state);
 
     if (playerStation.type === GROUPHEAD) {
-      if (!player.has && playerStation.has) {
-        player.has = playerStation.has;
-        playerStation.has = null;
-      } else if (
-        player.has
-        && player.has.type === CLEAN_PORTAFILTER
-        && !playerStation.has
+
+      if (
+        hasItemOfType(playerStation, CLEAN_PORTAFILTER)
+        && player.has.length === 0
       ) {
-        playerStation.has = player.has;
-        player.has = null;
+        takeItemOfType(player, playerStation, CLEAN_PORTAFILTER);
+        return state;
       }
-      return state;
+
+      if (
+        (
+          hasItemOfType(player, CLEAN_PORTAFILTER)
+          || hasItemOfType(player, FILLED_PORTAFILTER)
+        )
+        && !(
+          hasItemOfType(playerStation, CLEAN_PORTAFILTER)
+          || hasItemOfType(playerStation, FILLED_PORTAFILTER)
+        )
+      ) {
+        takeItemOfType(playerStation, player, firstItemType(player));
+        return state;
+      }
+    }
+
+    if (playerStation.type === CUP_COUNTER) {
+      if (player.has.length === 0) {
+        addItemOfType(player, CLEAN_CUP);
+        return state;
+      }
+
+      if (hasItemOfType(player, CLEAN_CUP)) {
+        removeItemOfType(player, CLEAN_CUP);
+        return state;
+      }
     }
 
     if (playerStation.type === ORDER_COUNTER) {
@@ -138,8 +166,7 @@ export default function reducer (state, action) {
 
     if (
       playerStation.type === GRINDER
-      && playerStation.has
-      && playerStation.has.type === CLEAN_PORTAFILTER
+      && hasItemOfType(playerStation, CLEAN_PORTAFILTER)
     ) {
       // begin filling + timer
       player.isActivating = true;
@@ -148,24 +175,29 @@ export default function reducer (state, action) {
 
     if (
       playerStation.type === GRINDER
-      && playerStation.has
-      && playerStation.has.type === FILLED_PORTAFILTER
+      && hasItemOfType(playerStation, FILLED_PORTAFILTER)
       && !player.isActivating
     ) {
       // May need to check if the player has released the key to prevent auto-grab
-      player.has = playerStation.has;
-      playerStation.has = null;
+      takeItemOfType(player, playerStation, FILLED_PORTAFILTER);
       playerStation.timer.value = 0;
       return state;
     }
 
     if (
       playerStation.type === GRINDER
-      && player.has
-      && player.has.type === CLEAN_PORTAFILTER
+      && hasItemOfType(player, CLEAN_PORTAFILTER)
     ) {
-      playerStation.has = player.has;
-      player.has = null;
+      takeItemOfType(playerStation, player, CLEAN_PORTAFILTER);
+      return state;
+    }
+
+    if (
+      playerStation.type === TRASH
+      && hasItemOfType(player, FILLED_PORTAFILTER)
+    ) {
+      removeItemOfType(player, FILLED_PORTAFILTER);
+      addItemOfType(player, CLEAN_PORTAFILTER);
       return state;
     }
   }
@@ -181,4 +213,34 @@ function stationInFrontOfPlayer (state) {
   const { entries, } = state.stations;
   const station = entries[position.rows];
   return station;
+}
+
+function takeItemOfType (taker, giver, type) {
+  const idx = giver.has.findIndex(item => item.type === type);
+  if (idx === -1) return;
+  const item = giver.has.splice(idx, 1);
+  taker.has.push(item[0]); // TODO: sorting?
+}
+
+function addItemOfType (taker, type) {
+  // TODO: sorting?
+  taker.has.push({ type });
+}
+
+function hasItemOfType (giver, type) {
+  return giver.has.find(item => item.type === type);
+}
+
+function removeItemOfType (giver, type) {
+  const idx = giver.has.findIndex(item => item.type === type);
+  if (idx === -1) return;
+  giver.has.splice(idx, 1);
+}
+
+function emptyItems (giver) {
+  giver.has.length = 0;
+}
+
+function firstItemType(giver) {
+  return giver.has[0].type;
 }

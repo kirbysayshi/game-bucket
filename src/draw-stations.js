@@ -19,15 +19,10 @@ export default function drawStations (interp, state) {
 
     drawNamedTileAtColRow(state, station.type, col, row);
 
-    if (station.has && station.type !== PICKUP_COUNTER) {
-      drawNamedTileAtColRow(state, station.has.type, col - 1, row);
-    }
-
-    if (station.type === PICKUP_COUNTER) {
-      station.has.forEach(thing => {
-        // TODO: how to display multiple things on the counter?
-        drawNamedTileAtColRow(state, thing.type, col - 1, row);
-      });
+    if (station.has) {
+      for (let i = 0; i < station.has.length; i++) {
+        drawNamedTileAtColRow(state, station.has[i].type, col - 1, row);
+      }
     }
 
     if (station.timer && station.timer.value > 0) {
