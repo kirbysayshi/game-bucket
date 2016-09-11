@@ -23,10 +23,14 @@ export const CUP_COUNTER = 'CUP_COUNTER';
 export const COUNTER_FLOOR = 'COUNTER_FLOOR';
 export const SHOP_FLOOR = 'SHOP_FLOOR';
 export const DECORATIVE_PLANT = 'DECORATIVE_PLANT';
+export const SHOP_DOOR = 'SHOP_DOOR';
+export const SHOP_WINDOW = 'SHOP_WINDOW';
 
 // Items / props
 export const CLEAN_CUP = 'CLEAN_CUP';
-export const FILLED_CUP = 'FILLED_CUP';
+export const FILLED_COFFEE_CUP = 'FILLED_COFFEE_CUP';
+export const FILLED_CAPPUCCINO_CUP = 'FILLED_CAPPUCCINO_CUP';
+export const FILLED_ESPRESSO_CUP = 'FILLED_ESPRESSO_CUP';
 export const CLEAN_PORTAFILTER = 'CLEAN_PORTAFILTER';
 export const FILLED_PORTAFILTER = 'FILLED_PORTAFILTER';
 export const ATTACHED_PORTAFILTER = 'ATTACHED_PORTAFILTER';
@@ -35,7 +39,7 @@ export const ATTACHED_PORTAFILTER = 'ATTACHED_PORTAFILTER';
 export const BARISTA = 'BARISTA';
 export const CHECKMARK = 'CHECKMARK';
 export const COLS_SPRITE_OFFSET = 0.5;
-export const ROWS_SPRITE_OFFSET = 0.5;
+export const ROWS_SPRITE_OFFSET = 0;
 
 // Fonts!
 export const FONT_COLOR_WHITE = 'FONT_COLOR_WHITE';

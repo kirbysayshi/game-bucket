@@ -15,9 +15,13 @@ import {
   COUNTER_FLOOR,
   SHOP_FLOOR,
   DECORATIVE_PLANT,
+  SHOP_DOOR,
+  SHOP_WINDOW,
 
   CLEAN_CUP,
-  FILLED_CUP,
+  FILLED_COFFEE_CUP,
+  FILLED_CAPPUCCINO_CUP,
+  FILLED_ESPRESSO_CUP,
   CLEAN_PORTAFILTER,
   FILLED_PORTAFILTER,
   ATTACHED_PORTAFILTER,
@@ -34,26 +38,44 @@ export default function initialState (cvs, tileImage, fontImage) {
   const SPRITE_COLS = 9;
   const SPRITE_ROWS = 16;
 
-  const tileMap = {
+  const tileSet = {
     [STEAMER]: { x: 0, y: 5 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [GROUPHEAD]: { x: 0, y: 4 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [HOT_WATER]: { x: 0, y: 3 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [GRINDER]: { x: 0, y: 7 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [CLEAN_CUP]: { x: 0, y: 9 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [FILLED_CUP]: { x: 0, y: 10 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [CLEAN_PORTAFILTER]: { x: 0, y: 12 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [FILLED_PORTAFILTER]: { x: 0, y: 11 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [FILLED_COFFEE_CUP]: { x: 0, y: 10 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [FILLED_CAPPUCCINO_CUP]: { x: 0, y: 11 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [FILLED_ESPRESSO_CUP]: { x: 0, y: 12 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [CLEAN_PORTAFILTER]: { x: 0, y: 14 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [FILLED_PORTAFILTER]: { x: 0, y: 13 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     //[ATTACHED_PORTAFILTER]: { x: 0, y: 8 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, }, // half
     [ORDER_COUNTER]: { x: 0, y: 0 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [PICKUP_COUNTER]: { x: 0, y: 8 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [BARISTA]: { x: 0, y: 13 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [BARISTA]: { x: 0, y: 15 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [CHECKMARK]: { x: 0, y: 99 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [TRASH]: { x: 0, y: 6 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [EMPTY_COUNTER]: { x: 0, y: 1 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [CUP_COUNTER]: { x: 0, y: 2 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [COUNTER_FLOOR]: { x: 0, y: 18 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [SHOP_FLOOR]: { x: 0, y: 17 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [DECORATIVE_PLANT]: { x: 0, y: 16 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [COUNTER_FLOOR]: { x: 0, y: 20 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [SHOP_FLOOR]: { x: 0, y: 19 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [DECORATIVE_PLANT]: { x: 0, y: 18 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [SHOP_DOOR]: { x: 0, y: 16 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [SHOP_WINDOW]: { x: 0, y: 17 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+  };
+
+  // These ranges are inclusive.
+  // Rects are drawn in iteration order, which is likely definition order...
+  const tileMap = {
+    '0,0-2,8': COUNTER_FLOOR,
+    '3,0-8,9': SHOP_FLOOR,
+    '0,9-15,15': SHOP_FLOOR,
+    '8,0-8,1': SHOP_DOOR,
+    '8,4': SHOP_WINDOW,
+    '8,6': SHOP_WINDOW,
+    '8,8': SHOP_WINDOW,
+    '8,10': SHOP_WINDOW,
+    '0,9-2,9': DECORATIVE_PLANT,
   };
 
   const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪:█';
@@ -78,6 +100,7 @@ export default function initialState (cvs, tileImage, fontImage) {
     screen: Screen(cvs, SPRITE_SIZE * SPRITE_COLS, SPRITE_SIZE * SPRITE_ROWS, 2),
 
     tileImage,
+    tileSet,
     tileMap,
 
     fontImageWhite: fontImage,
