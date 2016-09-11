@@ -2,6 +2,10 @@ export default function reducer (state, action) {
   
   // TODO: figure out some sort of immutability helper. maybe just ... ?
 
+  if (action.type === 'DEBUG_TOGGLE') {
+    state.debug = !state.debug;
+  }
+
   if (action.type === 'NEW_CUSTOMER') {
     state.customers.push({
       name: action.data.name,

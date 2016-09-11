@@ -1,8 +1,9 @@
+import { PICKUP_COUNTER } from './constants';
+import drawNamedTileAtColRow from './draw-named-tile-at-col-row';
+
 export default function drawStations (interp, state) {
   const {
-    screen,
     stations,
-    SPRITE_SIZE,
   } = state;
 
   const { offset, entries } = stations;
@@ -11,14 +12,23 @@ export default function drawStations (interp, state) {
 
   entries.forEach((station, idx) => {
     const row = rowsTotal;
-    const red = idx % 2 === 0 ? 255 : 25;
-    const blue = Math.floor((idx / entries.length) * 255);
-    screen.ctx.fillStyle = 'rgba(' + red + ',50,' + blue + ',1)';
-    screen.ctx.fillRect(
-      col * SPRITE_SIZE,
-      row * SPRITE_SIZE,
-      SPRITE_SIZE, station.wh.rows * SPRITE_SIZE
-    );
+
+    // TODO: should the ORDER_COUNTER station be two spaces?
+    // Could do ORDER_COUNTER_1 ORDER_COUNTER_2 instead of special case?
+
+    drawNamedTileAtColRow(state, station.type, col, row);
+
+    if (station.has && station.type !== PICKUP_COUNTER) {
+      drawNamedTileAtColRow(state, station.has.type, col - 1, row);
+    }
+
+    if (station.type === PICKUP_COUNTER) {
+      station.has.forEach(thing => {
+        // TODO: how to display multiple things on the counter?
+        drawNamedTileAtColRow(state, thing.type, col - 1, row);
+      });
+    }
+
     rowsTotal += station.wh.rows;
   });
 }

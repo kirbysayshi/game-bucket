@@ -14,6 +14,7 @@
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-es2015-rollup": "^1.1.1",
     "babelrc-rollup": "^1.1.0",
+    "http-server": "^0.9.0",
     "rollup": "^0.32.2",
     "rollup-plugin-babel": "^2.6.1",
     "rollup-plugin-commonjs": "^3.1.0",
@@ -26,9 +27,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c",
     "watch": "rollup -c -w",
+	"serve": "http-server",
     "uglify": "uglifyjs bundle.js --compress --mangle -o bundle.min.js && mv -f bundle.min.js bundle.js",
     "uglify-view": "uglifyjs bundle.js --compress --mangle --beautify",
-    "zip": "rm -rf game.zip && NODE_ENV=production npm run build && npm run uglify && zip -X -r game.zip index.html bundle.js assets && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
+    "optimize-images": "for f in assets/*; do convert $f PNG8:\"$f\"8 && mv -f \"$f\"8 ${f%.*}.png; done;",
+    "zip": "rm -rf game.zip && NODE_ENV=production npm run build && npm run uglify && npm run optimize-images && zip -X -r game.zip index.html bundle.js assets/*.png && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
   },
   "author": "Drew Petersen <senofpeter@gmail.com>",
   "license": "MIT"
