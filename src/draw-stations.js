@@ -1,5 +1,6 @@
 import { PICKUP_COUNTER } from './constants';
 import drawNamedTileAtColRow from './draw-named-tile-at-col-row';
+import drawProgressAtColRow from './draw-progress-at-col-row';
 
 export default function drawStations (interp, state) {
   const {
@@ -27,6 +28,10 @@ export default function drawStations (interp, state) {
         // TODO: how to display multiple things on the counter?
         drawNamedTileAtColRow(state, thing.type, col - 1, row);
       });
+    }
+
+    if (station.timer && station.timer.value > 0) {
+      drawProgressAtColRow(state, station.timer.value, station.timer.max, col, row);
     }
 
     rowsTotal += 1;

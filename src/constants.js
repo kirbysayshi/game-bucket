@@ -1,9 +1,10 @@
 
 // Actions
-
+export const GAME_TICK = 'GAME_TICK';
 export const SWIPE_UP = 'SWIPE_UP';
 export const SWIPE_DOWN = 'SWIPE_DOWN';
 export const ACTIVATE = 'ACTIVATE';
+export const ACTIVATE_CEASE = 'ACTIVATE_CEASE';
 export const NEW_CUSTOMER = 'NEW_CUSTOMER';
 export const DEBUG_TOGGLE = 'DEBUG_TOGGLE';
 

@@ -1,6 +1,7 @@
 import { Store } from 'naivedux';
 import Screen from './lib/screen';
 import loadImage from './lib/load-image';
+import Loop from './lib/loop';
 
 import initialState from './src/initial-state';
 import reducer from './src/reducer';
@@ -17,8 +18,11 @@ import {
   SWIPE_UP,
   SWIPE_DOWN,
   ACTIVATE,
+  ACTIVATE_CEASE,
   DEBUG_TOGGLE,
   NEW_CUSTOMER,
+
+  GAME_TICK,
 } from './src/constants';
 
 // Espresso: the coffee beverage produced by a pump or lever espresso machine. This Italian word describes a beverage made from 7 grams (+/- 2 grams) of finely ground coffee, producing 1-1.5 ounces (30-45ml) of extracted beverage under 9 bar (135psi) of brewing pressure at brewing temperatures of between 194 and 204 degrees Fahrenheit, over a period of 25 seconds (+/- 5 seconds) of brew time. Espresso is what this whole definition list is about!
@@ -52,7 +56,22 @@ function boot () {
       render(1, state);
     });
 
+    const loopCtrl = Loop({
+      drawTime: 1000 / 10,
+      updateTime: 1000 / 10,
+      draw: (interp) => {},
+      update: (dt) => {
+        // dispatch a GAME_TICK event that the reducer applies only for timers currently ACTIVE
+        store.dispatch({ type: GAME_TICK, data: dt });
+      },
+    });
+
     document.body.addEventListener('keydown', e => {
+
+      if (e.which === 27) {
+        loopCtrl.stop();
+        console.log('halt in the name of science')
+      }
 
       if ([37,38,39,40].indexOf(e.which) > -1) e.preventDefault();
 
@@ -64,12 +83,20 @@ function boot () {
       // These may need to be more complicated actions, such as dispatching
       // and error animation / sound if already holding something or incompatible
       // right arrow
-      if (e.which === 39) store.dispatch({ type: ACTIVATE });
+      if (e.which === 39) {
+        if (!store.getState().player.isActivating) {
+          store.dispatch({ type: ACTIVATE });
+        }
+      }
       // left arrow
       //if (e.which === 37) store.dispatch({ type: 'PICKUP' });
 
       // < + shift + cmd (mac, alt on windows)
       if (e.which === 188 && e.metaKey && e.shiftKey) store.dispatch({ type: DEBUG_TOGGLE });
+    }, false);
+
+    document.body.addEventListener('keyup', e => {
+      if (e.which === 39) store.dispatch({ type: ACTIVATE_CEASE });
     }, false);
 
     const newCustomer = () => (dispatch, getState) => (dispatch({
@@ -89,6 +116,7 @@ function boot () {
     store.dispatch(newCustomer());
     store.dispatch(newCustomer());
 
+
   });
 }
 
@@ -104,6 +132,15 @@ function render (interp, state) {
 
   const rowHeight = screen.height / SPRITE_ROWS;
   screen.ctx.save();
+
+  screen.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+  screen.ctx.beginPath();
+  screen.ctx.moveTo(screen.width, rowHeight * 2);
+  screen.ctx.lineTo(0, rowHeight * 10);
+  screen.ctx.lineTo(0, 0);
+  screen.ctx.lineTo(screen.width, 0);
+  screen.ctx.fill();
+
   screen.ctx.fillStyle = 'rgba(32, 32, 32, 0.2)';
   screen.ctx.beginPath();
   screen.ctx.moveTo(screen.width, rowHeight * 2);
