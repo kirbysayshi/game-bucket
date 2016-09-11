@@ -87,8 +87,6 @@ function render (interp, state) {
   drawPlayer(interp, state);
   drawStations(interp, state);
   drawCustomers(interp, state);
-
-  //drawText(state, 'Cappuccino', 3, 8, FONT_COLOR_BLACK);
 }
 
 boot();

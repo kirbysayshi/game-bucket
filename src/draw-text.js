@@ -3,6 +3,9 @@ import {
   FONT_COLOR_BLACK,
 } from './constants';
 
+// NOTE: positioning the initial text uses the screen scale, but individual
+// characters do not to allow for more text on the screen at the time.
+
 export default function drawText (state, str, col, row, color=FONT_COLOR_WHITE) {
   const {
     SPRITE_SIZE,
@@ -14,6 +17,8 @@ export default function drawText (state, str, col, row, color=FONT_COLOR_WHITE) 
     screen,
   } = state;
 
+  const { scale } = screen;
+
   // Might need some other colors here, eventually.
   const fontImage = color === FONT_COLOR_WHITE
     ? fontImageWhite
@@ -24,8 +29,8 @@ export default function drawText (state, str, col, row, color=FONT_COLOR_WHITE) 
     return all;
   }, {});
 
-  let x = SPRITE_SIZE * col;
-  let y = SPRITE_SIZE * row;
+  let x = SPRITE_SIZE * scale * col;
+  let y = SPRITE_SIZE * scale * row;
 
   str.split('').forEach(c => {
 

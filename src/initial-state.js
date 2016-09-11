@@ -64,7 +64,7 @@ export default function initialState (cvs, tileImage, fontImage) {
     SPRITE_SIZE,
     SPRITE_COLS,
     SPRITE_ROWS,
-    screen: Screen(cvs, SPRITE_SIZE * SPRITE_COLS, SPRITE_SIZE * SPRITE_ROWS),
+    screen: Screen(cvs, SPRITE_SIZE * SPRITE_COLS, SPRITE_SIZE * SPRITE_ROWS, 2),
 
     tileImage,
     tileMap,
