@@ -20,6 +20,7 @@ import {
   TRASH,
   CUP_COUNTER,
   HOT_WATER,
+  STEAMER,
 
 } from './constants';
 
@@ -99,6 +100,15 @@ export default function reducer (state, action) {
         ) {
           const removed = removeItemOfType(station, FILLED_ESPRESSO_CUP);
           const added = addItemOfType(station, FILLED_AMERICANO_CUP);
+          added.wellBrewed = removed.wellBrewed;
+        }
+
+        if (
+          station.type === STEAMER
+          && hasItemOfType(station, FILLED_ESPRESSO_CUP)
+        ) {
+          const removed = removeItemOfType(station, FILLED_ESPRESSO_CUP);
+          const added = addItemOfType(station, FILLED_CAPPUCCINO_CUP);
           added.wellBrewed = removed.wellBrewed;
         }
       }
@@ -322,6 +332,46 @@ export default function reducer (state, action) {
       removeItemOfType(player, FILLED_PORTAFILTER);
       addItemOfType(player, CLEAN_PORTAFILTER);
       return state;
+    }
+
+    if (playerStation.type === STEAMER) {
+
+      // put an item into the steamer
+      if (
+        playerStation.has.length === 0
+        && (
+          hasItemOfType(player, FILLED_ESPRESSO_CUP)
+          || hasItemOfType(player, FILLED_AMERICANO_CUP)
+          || hasItemOfType(player, CLEAN_CUP)
+        )
+      ) {
+        takeItemOfType(playerStation, player, firstItemType(player));
+        return state;
+      }
+
+      // Start steaming
+      if (
+        hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
+        || hasItemOfType(playerStation, FILLED_AMERICANO_CUP)
+        || hasItemOfType(playerStation, CLEAN_CUP)
+      ) {
+        // begin filling + timer
+        player.isActivating = true;
+        playerStation.timer.active = true;
+        return state;
+      }
+
+      // Take whatever is on the station
+      if (
+        hasItemOfType(playerStation, FILLED_CAPPUCCINO_CUP)
+        //|| hasItemOfType(playerStation, )
+        //|| hasItemOfType(playerStation, CLEAN_CUP)
+        && !player.isActivating
+      ) {
+        takeItemOfType(player, playerStation, firstItemType(playerStation));
+        playerStation.timer.value = 0;
+        return state;
+      }
     }
 
     if (

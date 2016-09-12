@@ -111,7 +111,7 @@ function boot () {
       const typeRand = getState().rng();
       const type = typeRand < 0.3
         ? FILLED_AMERICANO_CUP
-        : typeRand < 0.66
+        : typeRand < 0.5
           ? FILLED_ESPRESSO_CUP
           : FILLED_CAPPUCCINO_CUP;
 
@@ -131,6 +131,7 @@ function boot () {
       })
     }
 
+    store.dispatch(newCustomer());
     store.dispatch(newCustomer());
     store.dispatch(newCustomer());
     store.dispatch(newCustomer());

@@ -127,7 +127,7 @@ export default function initialState (cvs, tileImage, fontImage) {
         { type: CUP_COUNTER, name: 'Cup Counter', },
         { type: HOT_WATER, name: 'Hot Water', has: [], timer: { value: 0, max: 10, hold: true, active: false, green: 1, red: 1, } },
         { type: GROUPHEAD, name: 'Grouphead', has: [{ type: CLEAN_PORTAFILTER, }], timer: { value: 0, max: 30, hold: false, active: false, green: 0.55, red: 0.95, } },
-        { type: STEAMER, name: 'Milk Steamer', has: [], /*has: { type: 'CLEAN_FROTHING_PITCHER' }*/ },
+        { type: STEAMER, name: 'Milk Steamer', has: [], timer: { value: 0, max: 30, hold: true, active: false, green: 0.55, red: 0.95, } },
         { type: TRASH, name: 'Trash / Grounds Chute', },
         { type: GRINDER, name: 'Grinder', setting: 20, has: [], timer: { value: 0, max: 10, hold: true, active: false, green: 1, red: 1, }, }, // also tamps?
         { type: PICKUP_COUNTER, name: 'The Counter', has: [] },
