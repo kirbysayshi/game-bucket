@@ -178,6 +178,10 @@ export default function reducer (state, action) {
         //|| hasItemOfType(playerStation, CLEAN_CUP)
       ) {
         takeItemOfType(player, playerStation, FILLED_AMERICANO_CUP);
+
+        // reset the station
+        playerStation.timer.value = 0;
+
         return state;
       }
 
@@ -215,6 +219,12 @@ export default function reducer (state, action) {
         takeItemOfType(player, playerStation, FILLED_ESPRESSO_CUP);
         const percentage = playerStation.timer.value / playerStation.timer.max;
         player.has[0].wellBrewed = percentage <= playerStation.timer.red;
+
+        // Reset the station
+        removeItemOfType(playerStation, FILLED_PORTAFILTER);
+        addItemOfType(playerStation, CLEAN_PORTAFILTER);
+        playerStation.timer.value = 0;
+
         return state;
       }
 
