@@ -20,7 +20,8 @@ export default function drawStations (interp, state) {
 
     if (station.has) {
       for (let i = 0; i < station.has.length; i++) {
-        drawNamedTileAtColRow(state, station.has[i].type, col - 1, row);
+        const item = station.has[i];
+        drawNamedTileAtColRow(state, item.sprite || item.type, col - 1, row);
       }
     }
 
