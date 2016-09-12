@@ -1,4 +1,4 @@
-export default function (state, value, max, col, row) {
+export default function (state, value, max, col, row, greenMin, redMin) {
 
   const { SPRITE_SIZE, screen, } = state;
   const { scale } = screen;
@@ -6,9 +6,16 @@ export default function (state, value, max, col, row) {
   const cellWidth = SPRITE_SIZE * scale; // also height
   const barHeight = cellWidth / 3;
   const yOffset = cellWidth - barHeight
-  const barWidth = (value / max) * cellWidth;
+  const progress = (value / max);
+  const barWidth = progress * cellWidth;
 
-  screen.ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  const fillStyle = progress < greenMin
+    ? 'rgba(255,255,255,0.8)'
+    : progress >= greenMin && progress <= redMin
+      ? 'rgba(0,255,0,0.8)'
+      : 'rgba(255,0,0,0.8)';
+
+  screen.ctx.fillStyle = fillStyle;
   screen.ctx.fillRect(
     col * SPRITE_SIZE * scale, (row * SPRITE_SIZE * scale) + yOffset,
     barWidth, barHeight

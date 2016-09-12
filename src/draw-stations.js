@@ -25,7 +25,7 @@ export default function drawStations (interp, state) {
     }
 
     if (station.timer && station.timer.value > 0) {
-      drawProgressAtColRow(state, station.timer.value, station.timer.max, col, row);
+      drawProgressAtColRow(state, station.timer.value, station.timer.max, col, row, station.timer.green, station.timer.red);
     }
 
     rowsTotal += 1;

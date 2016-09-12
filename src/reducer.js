@@ -10,14 +10,16 @@ import {
   GROUPHEAD,
   CLEAN_PORTAFILTER,
   FILLED_PORTAFILTER,
-  FILLED_COFFEE_CUP,
+  FILLED_AMERICANO_CUP,
   FILLED_CAPPUCCINO_CUP,
   FILLED_ESPRESSO_CUP,
   CLEAN_CUP,
   GRINDER,
   ORDER_COUNTER,
+  PICKUP_COUNTER,
   TRASH,
   CUP_COUNTER,
+  HOT_WATER,
 
 } from './constants';
 
@@ -79,6 +81,30 @@ export default function reducer (state, action) {
 
       if (
         station.timer.active
+        && (station.timer.value / station.timer.max) >= station.timer.green
+      ) {
+
+        if (
+          station.type === GROUPHEAD
+          && !hasItemOfType(station, FILLED_ESPRESSO_CUP)
+        ) {
+          // convert cup into something
+          removeItemOfType(station, CLEAN_CUP);
+          addItemOfType(station, FILLED_ESPRESSO_CUP);
+        }
+
+        if (
+          station.type === HOT_WATER
+          && hasItemOfType(station, FILLED_ESPRESSO_CUP)
+        ) {
+          const removed = removeItemOfType(station, FILLED_ESPRESSO_CUP);
+          const added = addItemOfType(station, FILLED_AMERICANO_CUP);
+          added.wellBrewed = removed.wellBrewed;
+        }
+      }
+
+      if (
+        station.timer.active
         && station.timer.value >= station.timer.max
       ) {
 
@@ -121,6 +147,42 @@ export default function reducer (state, action) {
     const { player } = state;
     const playerStation = stationInFrontOfPlayer(state);
 
+    if (playerStation.type === HOT_WATER) {
+
+      // player put the filled espresso
+      if (
+        hasItemOfType(player, FILLED_ESPRESSO_CUP)
+        && !hasItemOfType(playerStation, CLEAN_CUP)
+        && !hasItemOfType(playerStation, FILLED_AMERICANO_CUP)
+        && !hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
+        && !hasItemOfType(playerStation, FILLED_CAPPUCCINO_CUP)
+      ) {
+        takeItemOfType(playerStation, player, firstItemType(player));
+        return state;
+      }
+
+      // has espresso, player activates water
+      if (
+        hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
+        //&& playerStation.timer.active === false
+        //|| hasItemOfType(playerStation, CLEAN_CUP)
+      ) {
+        playerStation.timer.active = true;
+        player.isActivating = true;
+        return state;
+      }
+
+      if (
+        hasItemOfType(playerStation, FILLED_AMERICANO_CUP)
+        && playerStation.timer.active === false
+        //|| hasItemOfType(playerStation, CLEAN_CUP)
+      ) {
+        takeItemOfType(player, playerStation, FILLED_AMERICANO_CUP);
+        return state;
+      }
+
+    }
+
     if (playerStation.type === GROUPHEAD) {
 
       // BREW COFFEE!
@@ -130,6 +192,29 @@ export default function reducer (state, action) {
       ) {
         playerStation.timer.active = true;
         player.isActivating = true;
+        return state;
+      }
+
+      // Toggle brewing
+      if (
+        hasItemOfType(playerStation, FILLED_PORTAFILTER)
+        //&& hasItemOfType(playerStation, CLEAN_CUP)
+        && playerStation.timer.active === true
+      ) {
+        playerStation.timer.active = false;
+        player.isActivating = true;
+        return state;
+      }
+
+      // Take the brewed espresso
+      if (
+        player.has.length === 0
+        && hasItemOfType(playerStation, FILLED_PORTAFILTER)
+        && hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
+      ) {
+        takeItemOfType(player, playerStation, FILLED_ESPRESSO_CUP);
+        const percentage = playerStation.timer.value / playerStation.timer.max;
+        player.has[0].wellBrewed = percentage <= playerStation.timer.red;
         return state;
       }
 
@@ -158,7 +243,7 @@ export default function reducer (state, action) {
       if (
         hasItemOfType(player, CLEAN_CUP)
         && !hasItemOfType(playerStation, CLEAN_CUP)
-        && !hasItemOfType(playerStation, FILLED_COFFEE_CUP)
+        && !hasItemOfType(playerStation, FILLED_AMERICANO_CUP)
         && !hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
         && !hasItemOfType(playerStation, FILLED_CAPPUCCINO_CUP)
       ) {
@@ -228,6 +313,28 @@ export default function reducer (state, action) {
       addItemOfType(player, CLEAN_PORTAFILTER);
       return state;
     }
+
+    if (
+      playerStation.type === PICKUP_COUNTER
+      && (hasItemOfType(player, FILLED_ESPRESSO_CUP)
+        || hasItemOfType(player, FILLED_CAPPUCCINO_CUP)
+        || hasItemOfType(player, FILLED_AMERICANO_CUP)
+      )
+    ) {
+      const type = firstItemType(player);
+      const item = removeItemOfType(player, type);
+      const { customers } = state;
+      const closestIdx = customers.findIndex(c => c.wants.type === type);
+      if (closestIdx > -1) {
+        if (item.wellBrewed) {
+          state.reputation += 10;
+        }
+
+        customers.splice(closestIdx, 1);
+      } else {
+        // make some sort of error appear?
+      }
+    }
   }
 
   return state;
@@ -252,8 +359,10 @@ function takeItemOfType (taker, giver, type) {
 }
 
 function addItemOfType (taker, type) {
-  taker.has.push({ type });
+  const item = { type };
+  taker.has.push(item);
   taker.has.sort(defaultItemSort);
+  return item;
 }
 
 function hasItemOfType (giver, type) {
@@ -263,7 +372,7 @@ function hasItemOfType (giver, type) {
 function removeItemOfType (giver, type) {
   const idx = giver.has.findIndex(item => item.type === type);
   if (idx === -1) return;
-  giver.has.splice(idx, 1);
+  return giver.has.splice(idx, 1)[0];
 }
 
 function emptyItems (giver) {

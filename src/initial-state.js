@@ -19,7 +19,7 @@ import {
   SHOP_WINDOW,
 
   CLEAN_CUP,
-  FILLED_COFFEE_CUP,
+  FILLED_AMERICANO_CUP,
   FILLED_CAPPUCCINO_CUP,
   FILLED_ESPRESSO_CUP,
   CLEAN_PORTAFILTER,
@@ -44,7 +44,7 @@ export default function initialState (cvs, tileImage, fontImage) {
     [HOT_WATER]: { x: 0, y: 3 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [GRINDER]: { x: 0, y: 7 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [CLEAN_CUP]: { x: 0, y: 9 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
-    [FILLED_COFFEE_CUP]: { x: 0, y: 10 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
+    [FILLED_AMERICANO_CUP]: { x: 0, y: 10 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [FILLED_CAPPUCCINO_CUP]: { x: 0, y: 11 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [FILLED_ESPRESSO_CUP]: { x: 0, y: 12 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
     [CLEAN_PORTAFILTER]: { x: 0, y: 14 * SPRITE_SIZE, w: SPRITE_SIZE, h: SPRITE_SIZE, },
@@ -114,6 +114,7 @@ export default function initialState (cvs, tileImage, fontImage) {
     orders: [],
 
     money: 0,
+    reputation: 0,
 
     stations: {
       offset: {
@@ -124,11 +125,11 @@ export default function initialState (cvs, tileImage, fontImage) {
         { type: ORDER_COUNTER, name: 'The Register', },
         { type: EMPTY_COUNTER, name: 'Counter', has: [], },
         { type: CUP_COUNTER, name: 'Cup Counter', },
-        { type: HOT_WATER, name: 'Hot Water', has: [], },
-        { type: GROUPHEAD, name: 'Grouphead', has: [{ type: CLEAN_PORTAFILTER, }], timer: { value: 0, max: 30, hold: false, active: false } },
+        { type: HOT_WATER, name: 'Hot Water', has: [], timer: { value: 0, max: 10, hold: true, active: false, green: 1, red: 1, } },
+        { type: GROUPHEAD, name: 'Grouphead', has: [{ type: CLEAN_PORTAFILTER, }], timer: { value: 0, max: 30, hold: false, active: false, green: 0.55, red: 0.95, } },
         { type: STEAMER, name: 'Milk Steamer', has: [], /*has: { type: 'CLEAN_FROTHING_PITCHER' }*/ },
         { type: TRASH, name: 'Trash / Grounds Chute', },
-        { type: GRINDER, name: 'Grinder', setting: 20, has: [], timer: { value: 0, max: 10, hold: true, active: false }, }, // also tamps?
+        { type: GRINDER, name: 'Grinder', setting: 20, has: [], timer: { value: 0, max: 10, hold: true, active: false, green: 1, red: 1, }, }, // also tamps?
         { type: PICKUP_COUNTER, name: 'The Counter', has: [] },
       ],
     },

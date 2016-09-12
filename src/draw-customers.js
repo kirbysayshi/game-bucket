@@ -10,11 +10,11 @@ export default function drawCustomers (interp, state) {
 
     // draw a customer and what they want
 
-    const { type } = customer.wants;
+    const { type, name } = customer.wants;
     const { cols, rows } = customer.position;
 
     drawText(state,
-      (customer.paid ? '' : '█ ') + customer.name + ': ' + type,
+      (customer.paid ? '' : '█ ') + customer.name + ': ' + name,
       cols, rows + ROWS_SPRITE_OFFSET);
   });
 }
