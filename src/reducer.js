@@ -89,11 +89,20 @@ export default function reducer (state, action) {
 
         if (
           station.type === GROUPHEAD
-          && !hasItemOfType(station, FILLED_ESPRESSO_CUP)
+          && hasItemOfType(station, CLEAN_CUP)
         ) {
           // convert cup into something
           removeItemOfType(station, CLEAN_CUP);
           addItemOfType(station, FILLED_ESPRESSO_CUP);
+        }
+
+        if (
+          station.type === GROUPHEAD
+          && hasItemOfType(station, FILLED_HOT_WATER_CUP)
+        ) {
+          // convert cup into something
+          removeItemOfType(station, FILLED_HOT_WATER_CUP);
+          addItemOfType(station, FILLED_AMERICANO_CUP);
         }
 
         if (
@@ -221,7 +230,8 @@ export default function reducer (state, action) {
       // BREW COFFEE!
       if (
         hasItemOfType(playerStation, FILLED_PORTAFILTER)
-        && hasItemOfType(playerStation, CLEAN_CUP)
+        && (hasItemOfType(playerStation, CLEAN_CUP)
+          || hasItemOfType(playerStation, FILLED_HOT_WATER_CUP))
       ) {
         playerStation.timer.active = true;
         player.isActivating = true;
@@ -243,9 +253,14 @@ export default function reducer (state, action) {
       if (
         player.has.length === 0
         && hasItemOfType(playerStation, FILLED_PORTAFILTER)
-        && hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
+        && (hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
+          || hasItemOfType(playerStation, FILLED_AMERICANO_CUP))
       ) {
-        takeItemOfType(player, playerStation, FILLED_ESPRESSO_CUP);
+        const type = hasWhichItem(playerStation, [
+          FILLED_ESPRESSO_CUP,
+          FILLED_AMERICANO_CUP
+        ]);
+        takeItemOfType(player, playerStation, type);
         const percentage = playerStation.timer.value / playerStation.timer.max;
         player.has[0].wellBrewed = percentage <= playerStation.timer.red;
 
@@ -280,11 +295,12 @@ export default function reducer (state, action) {
       }
 
       if (
-        hasItemOfType(player, CLEAN_CUP)
+        (hasItemOfType(player, CLEAN_CUP) || hasItemOfType(player, FILLED_HOT_WATER_CUP))
         && !hasItemOfType(playerStation, CLEAN_CUP)
         && !hasItemOfType(playerStation, FILLED_AMERICANO_CUP)
         && !hasItemOfType(playerStation, FILLED_ESPRESSO_CUP)
         && !hasItemOfType(playerStation, FILLED_CAPPUCCINO_CUP)
+        && !hasItemOfType(playerStation, FILLED_HOT_WATER_CUP)
       ) {
         takeItemOfType(playerStation, player, firstItemType(player));
         return state;
@@ -467,6 +483,15 @@ function emptyItems (giver) {
 
 function firstItemType(giver) {
   return giver.has[0].type;
+}
+
+function hasWhichItem(giver, types) {
+  for (let i = 0; i < types.length; i++) {
+    if (giver.has.find(item => item.type === types[i])) {
+      return types[i];
+    }
+  }
+  return false;
 }
 
 function defaultItemSort (a, b) {
