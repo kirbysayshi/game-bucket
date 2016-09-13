@@ -48,7 +48,7 @@ function boot () {
 
     const store = new Store(reducer, initialLevelState(window.c, tileImage, fontImage));
 
-    store.dispatch({ type: 'LEVEL_INIT', data: 1 });
+    //store.dispatch({ type: 'LEVEL_INIT', data: 1 });
     //store.dispatch({ type: 'LEVEL_INIT', });
 
     store.subscribe(() => {
@@ -75,14 +75,9 @@ function boot () {
       updateTime: GAME_UPDATE_DT,
       draw: (interp) => {},
       update: (dt) => {
-        // dispatch a GAME_TICK event that the reducer applies only for timers currently ACTIVE
         store.dispatch({ type: GAME_TICK, data: dt });
-
-        const state = store.getState();
-
-        if (state.levelTime >= state.levelMaxTime) {
-          store.dispatch({ type: 'NEXT_LEVEL' })
-        }
+        store.dispatch(actionMaybeNextLevel());
+        store.dispatch(actionMaybeAddCustomer());
       },
     });
 
@@ -114,43 +109,6 @@ function boot () {
     document.body.addEventListener('keyup', e => {
       if (e.which === 39) store.dispatch({ type: ACTIVATE_CEASE });
     }, false);
-
-    const newCustomer = () => (dispatch, getState) => {
-
-      const name = getState().rng() > 0.5 ? 'James' : 'Lily';
-
-      const typeRand = getState().rng();
-      const type = typeRand < 0.3
-        ? FILLED_AMERICANO_CUP
-        : typeRand < 0.5
-          ? FILLED_ESPRESSO_CUP
-          : FILLED_CAPPUCCINO_CUP;
-
-      dispatch({
-        type: NEW_CUSTOMER,
-        data: {
-          name,
-          wants: {
-            type,
-            name: type === FILLED_AMERICANO_CUP
-              ? 'Americano'
-              : type === FILLED_ESPRESSO_CUP
-                ? 'Espresso'
-                : 'Cappuccino'
-          }
-        }
-      })
-    }
-
-    store.dispatch(newCustomer());
-    store.dispatch(newCustomer());
-    store.dispatch(newCustomer());
-    store.dispatch(newCustomer());
-    store.dispatch(newCustomer());
-    store.dispatch(newCustomer());
-    store.dispatch(newCustomer());
-
-
   });
 }
 
@@ -159,8 +117,9 @@ const actionMaybeNextLevel = () => (dispatch, getState) => {
 
   // Level complete!
   if (state.levelTime >= state.levelMaxTime) {
-    dispatch({ type: 'HALT_PLAYER_LEVEL_CONTROL' });
-    dispatch({ type: 'SHOW_SUMMARY_SCREEN' });
+    dispatch({ type: 'NEXT_LEVEL' });
+    //dispatch({ type: 'HALT_PLAYER_LEVEL_CONTROL' });
+    //dispatch({ type: 'SHOW_SUMMARY_SCREEN' });
   }
 }
 
@@ -182,6 +141,76 @@ const actionActivate = () => (dispatch, getState) => {
     dispatch({ type: 'RESUME_PLAYER_LEVEL_CONTROL' });
     return;
   }
+}
+
+const actionMaybeAddCustomer = () => (dispatch, getState) => {
+
+  const state = getState();
+
+  if (state.view !== 'LEVEL_VIEW') return;
+
+  const {
+    lastCustomerSpawnDT,
+    levelTime,
+    rng,
+    customerNames,
+    customers,
+  } = state;
+
+  const level = state.levels[state.levelIdx];
+
+  const INITIAL_MIN_SPAWN_ELAPSED = 0;
+
+  let hasSpawnedOneThisTick = false;
+
+  level.wants.forEach(wants => {
+    if (hasSpawnedOneThisTick) return;
+
+    // Only spawn a customer if enough time has passed, or this is the first
+    // tick and we've passed the INITIAL_MIN_SPAWN_ELAPSED
+    if (
+      (lastCustomerSpawnDT === 0
+        && levelTime >= INITIAL_MIN_SPAWN_ELAPSED)
+      || levelTime - lastCustomerSpawnDT > wants.minimumTime
+    ) {
+      const roll = rng();
+      if (roll > wants.rarity) {
+        hasSpawnedOneThisTick = true;
+        // MUTATION: This should be a dispatch.
+        state.lastCustomerSpawnDT = levelTime;
+        // SPAWN!
+        // find a name
+        let possibles = customerNames.filter(possible => possible.hasSpawned === false);
+        if (!possibles.length) {
+          // reset spawn status
+          customerNames.forEach(possible => possible.hasSpawned = false);
+          possibles = customerNames;
+        }
+
+        const nameIdx = Math.floor(rng() * (possibles.length - 1));
+        const possible = possibles[nameIdx];
+        // MUTATION: This should be a dispatch.
+        possible.hasSpawned = true;
+
+        dispatch({
+          type: NEW_CUSTOMER,
+          data: {
+            name: possible.name,
+            wants: {
+              type: wants.type,
+
+              // TODO: add glitch + more here
+              name: wants.type === FILLED_AMERICANO_CUP
+                ? 'Americano'
+                : wants.type === FILLED_ESPRESSO_CUP
+                  ? 'Espresso'
+                  : 'Cappuccino'
+            }
+          }
+        });
+      }
+    }
+  });
 }
 
 function render (interp, state) {

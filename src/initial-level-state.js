@@ -121,13 +121,46 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
     reputation: 0,
 
     levelTime: 0,
-    levelMaxTime: GAME_UPDATE_DT * 10 * 10, //600,
+    levelMaxTime: GAME_UPDATE_DT * 10 * 300, //600,
 
     sun: {
       position: { start: 0, end: 0, },
       height: { start: 0, end: 0, },
       distance: { start: 0, end: 0 },
     },
+
+    levelIdx: 0,
+
+    lastCustomerSpawnDT: 0,
+
+    customerNames: [
+      'Benjamin',
+      'Kira',
+      'Julian',
+      'Miles',
+      'Jadzia',
+      'Keiko',
+      'Kasidy',
+      'Jake',
+      'Worf',
+    ].map(name => ({ name, hasSpawned: false })),
+
+    levels: [
+
+      // wants must be sorted rarest to least rare!
+
+      // level 1: only espresso
+      {
+
+        wants: [
+          {
+            type: FILLED_ESPRESSO_CUP,
+            rarity: 0,
+            minimumTime: GAME_UPDATE_DT * 10 * 30, // seconds
+          }
+        ]
+      }
+    ],
 
     stations: {
       offset: {

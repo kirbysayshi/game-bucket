@@ -26,7 +26,8 @@ export default function drawBootView (interp, state) {
 
   drawText(state, 'You are the sole barista at a 24-hour coffee', 1, descRow += leading);
   drawText(state, 'shop. Serve your customers the glitching brew', 1, descRow += leading);
-  drawText(state, 'their sleepless brains require.', 1, descRow += leading);
+  drawText(state, 'their sleepless brains require, while waiting', 1, descRow += leading);
+  drawText(state, 'for the safety of the sun.', 1, descRow += leading);
 
   let controlsRow = descRow + (3 * leading);
   drawText(state, 'CONTROLS:', 1, controlsRow += leading);

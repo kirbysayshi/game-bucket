@@ -60,10 +60,11 @@ export default function reducer (state, action) {
       paid: false,
       // TODO: compute all customers positions when a new one comes in
       position: {
-        rows: state.customers.length,
-        cols: Math.floor(SPRITE_COLS / 2),
+        rows: 0,
+        cols: 0,
       },
     });
+    positionCustomers(state);
     return state;
   }
   
@@ -447,6 +448,7 @@ export default function reducer (state, action) {
         }
 
         customers.splice(closestIdx, 1);
+        positionCustomers(customers);
       } else {
         // make some sort of error appear?
       }
@@ -454,6 +456,17 @@ export default function reducer (state, action) {
   }
 
   return state;
+}
+
+function positionCustomers (state) {
+  const offset = 0.5;
+  const { customers, SPRITE_COLS, } = state;
+  customers.forEach((customer, i) => {
+    customer.position = {
+      rows: offset + i,
+      cols: Math.floor(SPRITE_COLS / 2),
+    }
+  })
 }
 
 function stationInFrontOfPlayer (state) {

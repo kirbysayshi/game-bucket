@@ -44,7 +44,7 @@ export default function drawSunbeams (interp, state) {
     cols = parseInt(cols, 10);
     rows = parseInt(rows, 10);
 
-    screen.ctx.fillStyle = 'rgba(255, 255, 255, ' + (pct * 0.1) + ')';
+    screen.ctx.fillStyle = 'rgba(255, 255, 255, ' + (pct * 0.2) + ')';
     screen.ctx.beginPath();
     screen.ctx.moveTo((cols + 1) * colsWidth, rows * rowsHeight);
     screen.ctx.lineTo(sunX, sunY - halfHeight);
