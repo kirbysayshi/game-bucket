@@ -49,6 +49,7 @@ export const BARISTA = 'BARISTA';
 export const CHECKMARK = 'CHECKMARK';
 export const COLS_SPRITE_OFFSET = 0.5;
 export const ROWS_SPRITE_OFFSET = 0;
+export const REPUTATION_GAINED = 10;
 
 // Fonts!
 export const FONT_COLOR_WHITE = 'FONT_COLOR_WHITE';

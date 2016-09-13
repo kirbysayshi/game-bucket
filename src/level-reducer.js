@@ -26,6 +26,7 @@ import {
   STEAMER,
 
   GAME_UPDATE_DT,
+  REPUTATION_GAINED,
 
 } from './constants';
 
@@ -48,6 +49,11 @@ import initialLevelState from './initial-level-state';
 
 export default function reducer (state, action) {
   
+  if (action.type === 'BETWEEN_LEVEL_VIEW') {
+    state.view = 'BETWEEN_LEVEL_VIEW';
+    return state;
+  }
+
   if (action.type === 'NEXT_LEVEL') {
     const next = initialLevelState(state.screen.cvs, state.tileImage, state.fontImage);
     // and whatever else needs to be saved between levels...
@@ -62,7 +68,12 @@ export default function reducer (state, action) {
   if (action.type === 'SHOW_SUMMARY_VIEW') {
     state.view = 'SUMMARY_VIEW';
     // compute player summary
-    
+    state.customers.forEach(customer => {
+      if (customer.paid === true) {
+        // they paid and got no drink!
+        state.reputation -= REPUTATION_GAINED;
+      }
+    });
     return state;
   }
 
@@ -477,7 +488,7 @@ export default function reducer (state, action) {
       const { customers } = state;
       const closestIdx = action.data;
       if (item.wellBrewed) {
-        state.reputation += 10;
+        state.reputation += REPUTATION_GAINED;
       }
 
       state.totalCustomersServed += 1;

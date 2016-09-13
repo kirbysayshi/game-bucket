@@ -16,6 +16,7 @@ import drawSunbeams from './src/draw-sunbeams';
 import drawBootView from './src/draw-boot-view';
 import drawLog from './src/draw-log';
 import drawSummaryView from './src/draw-summary-view';
+import drawMidLevelView from './src/draw-mid-level-view';
 
 import {
   stationInFrontOfPlayer,
@@ -162,7 +163,8 @@ const actionMaybeNextLevel = () => (dispatch, getState) => {
   ) {
 
     if (state.levelIdx + 1 < state.levels.length) {
-      return dispatch({ type: 'NEXT_LEVEL' });
+      //return dispatch({ type: 'NEXT_LEVEL' });
+      return dispatch({ type: 'BETWEEN_LEVEL_VIEW' });
     } else {
       // end game
       return dispatch({ type: 'SHOW_SUMMARY_VIEW' });
@@ -181,7 +183,7 @@ const actionActivate = () => (dispatch, getState) => {
     const playerStation = stationInFrontOfPlayer(state);
     const { player } = state;
 
-    if (playerStation.type === PICKUP_COUNTER) {
+    if (player.has.length && playerStation.type === PICKUP_COUNTER) {
       const type = firstItemType(player);
       const { customers } = state;
       const closestIdx = customers.findIndex(c => c.wants.type === type);
@@ -209,6 +211,10 @@ const actionActivate = () => (dispatch, getState) => {
 
   if (state.view === 'BOOT_GAME_VIEW') {
     return dispatch({ type: 'NEXT_LEVEL' });
+  }
+
+  if (state.view === 'BETWEEN_LEVEL_VIEW') {
+    return dispatch({ type: 'NEXT_LEVEL'});
   }
 
   /*if (state.view === 'LEVEL_SUMMARY_VIEW') {
@@ -403,6 +409,12 @@ function render (interp, state) {
     drawSunbeams(interp, state);
   }
 
+  if (view === 'BETWEEN_LEVEL_VIEW') {
+    drawFloorTiles(interp, state);
+    drawStations(interp, state);
+    drawMidLevelView(interp, state);
+  }
+
   if (view === 'BOOT_GAME_VIEW') {
     drawFloorTiles(interp, state);
     drawStations(interp, state);
@@ -410,6 +422,8 @@ function render (interp, state) {
   }
 
   if (view === 'SUMMARY_VIEW') {
+    drawFloorTiles(interp, state);
+    drawStations(interp, state);
     drawSummaryView(interp, state);
   }
 }

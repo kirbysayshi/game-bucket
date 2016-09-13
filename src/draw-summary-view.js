@@ -18,15 +18,17 @@ export default function drawSummaryView (interp, state) {
 
   // state, str, col, row, color=FONT_COLOR_WHITE, scale=1
   const titleScale = 2;
-  drawText(state, 'Shifts Complete!', 1, 2, FONT_COLOR_WHITE, titleScale);
+  drawText(state, 'Weekly', 1, 2, FONT_COLOR_WHITE, titleScale);
+  drawText(state, 'Night-Shifts:', 1, 3, FONT_COLOR_WHITE, titleScale);
+  drawText(state, 'Complete!', 1, 4, FONT_COLOR_WHITE, titleScale);
 
   const leading = 0.5;
-  let rows = 6.5;
+  let rows = 4.5;
 
   drawText(state, '❤: ' + state.reputation, 1, rows += leading);
   drawText(state, '█: ' + state.money , 1, rows += leading);
   drawText(state, 'Customers: ' + state.totalCustomersServed, 1, rows += leading);
 
   const creditsScale = 1;
-  drawText(state, 'Thank you for playing!', 1, 14, FONT_COLOR_WHITE, creditsScale);
+  drawText(state, 'Thank you for playing!', 1, rows += leading, FONT_COLOR_WHITE, creditsScale);
 }
