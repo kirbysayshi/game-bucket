@@ -4,7 +4,13 @@ import drawText from './draw-text';
 export default function drawCustomers (interp, state) {
   const {
     customers,
+    SPRITE_COLS,
   } = state;
+
+  const labelRows = 0.5;
+
+  drawText(state,
+    'CUSTOMERS', Math.floor(SPRITE_COLS / 2), labelRows + ROWS_SPRITE_OFFSET);
 
   customers.forEach((customer, idx) => {
 
@@ -15,6 +21,6 @@ export default function drawCustomers (interp, state) {
 
     drawText(state,
       (customer.paid ? '' : '█ ') + customer.name + ': ' + name,
-      cols, rows + ROWS_SPRITE_OFFSET);
+      cols, labelRows + rows + ROWS_SPRITE_OFFSET);
   });
 }

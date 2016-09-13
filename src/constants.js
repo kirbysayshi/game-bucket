@@ -1,7 +1,7 @@
 
 // Timings
 export const RENDER_UPDATE_DT = 1000 / 60;
-export const GAME_UPDATE_DT = 1000 / 10;
+export const GAME_UPDATE_DT = 1000 / 100;
 
 // Actions
 export const GAME_TICK = 'GAME_TICK';
@@ -11,6 +11,7 @@ export const ACTIVATE = 'ACTIVATE';
 export const ACTIVATE_CEASE = 'ACTIVATE_CEASE';
 export const NEW_CUSTOMER = 'NEW_CUSTOMER';
 export const DEBUG_TOGGLE = 'DEBUG_TOGGLE';
+export const LOG_ENTRY_ADDED = 'LOG_ENTRY_ADDED';
 
 // Station types
 export const ORDER_COUNTER = 'ORDER_COUNTER';

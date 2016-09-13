@@ -14,10 +14,22 @@ import drawScore from './src/draw-score';
 import drawFloorTiles from './src/draw-floor-tiles';
 import drawSunbeams from './src/draw-sunbeams';
 import drawBootView from './src/draw-boot-view';
+import drawLog from './src/draw-log';
+import drawSummaryView from './src/draw-summary-view';
+
+import {
+  stationInFrontOfPlayer,
+} from './src/station-utils';
+
+import {
+  firstItemType,
+} from './src/item-utils';
 
 import {
   RENDER_UPDATE_DT,
   GAME_UPDATE_DT,
+
+  LOG_ENTRY_ADDED,
 
   FONT_COLOR_WHITE,
   FONT_COLOR_BLACK,
@@ -28,6 +40,7 @@ import {
   ACTIVATE_CEASE,
   DEBUG_TOGGLE,
   NEW_CUSTOMER,
+  PICKUP_COUNTER,
 
   GAME_TICK,
 
@@ -78,6 +91,7 @@ function boot () {
         store.dispatch({ type: GAME_TICK, data: dt });
         store.dispatch(actionMaybeNextLevel());
         store.dispatch(actionMaybeAddCustomer());
+        store.dispatch(actionMaybeLogTimeRemaining());
       },
     });
 
@@ -116,8 +130,18 @@ const actionMaybeNextLevel = () => (dispatch, getState) => {
   const state = getState();
 
   // Level complete!
-  if (state.levelTime >= state.levelMaxTime) {
-    dispatch({ type: 'NEXT_LEVEL' });
+  if (
+    state.view === 'LEVEL_VIEW'
+    && state.levelTime >= state.levelMaxTime
+  ) {
+
+    if (state.levelIdx + 1 < state.levels.length) {
+      return dispatch({ type: 'NEXT_LEVEL' });
+    } else {
+      // end game
+      return dispatch({ type: 'SHOW_SUMMARY_VIEW' });
+    }
+
     //dispatch({ type: 'HALT_PLAYER_LEVEL_CONTROL' });
     //dispatch({ type: 'SHOW_SUMMARY_SCREEN' });
   }
@@ -127,6 +151,31 @@ const actionActivate = () => (dispatch, getState) => {
   const state = getState();
 
   if (state.view === 'LEVEL_VIEW') {
+
+    const playerStation = stationInFrontOfPlayer(state);
+    const { player } = state;
+
+    if (playerStation.type === PICKUP_COUNTER) {
+      const type = firstItemType(player);
+      const { customers } = state;
+      const closestIdx = customers.findIndex(c => c.wants.type === type);
+
+      if (closestIdx > -1) {
+        const customer = customers[closestIdx];
+        if (!customer.paid) {
+          return dispatch({
+            type: LOG_ENTRY_ADDED,
+            data: 'They need to pay to receive the drink!',
+          });
+        }
+
+        return dispatch({
+          type: 'CUSTOMER_DRINK_READY',
+          data: closestIdx,
+        });
+      }
+    }
+
     if (!state.player.isActivating) {
       return dispatch({ type: ACTIVATE });
     }
@@ -136,9 +185,96 @@ const actionActivate = () => (dispatch, getState) => {
     return dispatch({ type: 'NEXT_LEVEL' });
   }
 
-  if (state.view === 'LEVEL_SUMMARY_VIEW') {
+  /*if (state.view === 'LEVEL_SUMMARY_VIEW') {
     dispatch({ type: 'NEXT_LEVEL' });
     dispatch({ type: 'RESUME_PLAYER_LEVEL_CONTROL' });
+    return;
+  }*/
+}
+
+const actionMaybeLogTimeRemaining = () => (dispatch, getState) => {
+  const state = getState();
+
+  const pct = state.levelTime / state.levelMaxTime;
+  const key = pct.toPrecision(2)
+
+  if (state.hasLoggedElapsedForPct[key]) return;
+
+  if (key === '0.25') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'Phew, a quarter through my shift!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.5') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'Halfway through my shift!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.75') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'Just a quarter of my shift left!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.91') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'I think I can see daylight!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.92') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'What is \'daylight\'?' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.93') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'I remember now!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.94') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'Daylight is definitely approaching!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.95') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'It\'s getting so bright!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.96') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'So bright...' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.97') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'So sleepy...' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.98') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'I can almost smell my bed...' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '0.99') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'Almost time to close up!' });
+    state.hasLoggedElapsedForPct[key] = true;
+    return;
+  }
+
+  if (key === '1') {
+    dispatch({ type: LOG_ENTRY_ADDED, data: 'Everybody out!' });
+    state.hasLoggedElapsedForPct[key] = true;
     return;
   }
 }
@@ -175,9 +311,6 @@ const actionMaybeAddCustomer = () => (dispatch, getState) => {
     ) {
       const roll = rng();
       if (roll > wants.rarity) {
-        hasSpawnedOneThisTick = true;
-        // MUTATION: This should be a dispatch.
-        state.lastCustomerSpawnDT = levelTime;
         // SPAWN!
         // find a name
         let possibles = customerNames.filter(possible => possible.hasSpawned === false);
@@ -208,6 +341,23 @@ const actionMaybeAddCustomer = () => (dispatch, getState) => {
             }
           }
         });
+
+        dispatch({
+          type: LOG_ENTRY_ADDED,
+          data: 'A new customer walked in!',
+        });
+
+        // first customer of the shift.
+        if (state.lastCustomerSpawnDT === 0) {
+          dispatch({
+            type: LOG_ENTRY_ADDED,
+            data: '... I\'d better take their money █.',
+          });
+        }
+
+        hasSpawnedOneThisTick = true;
+        // MUTATION: This should be a dispatch.
+        state.lastCustomerSpawnDT = levelTime;
       }
     }
   });
@@ -223,6 +373,7 @@ function render (interp, state) {
     drawStations(interp, state);
     drawCustomers(interp, state);
     drawScore(interp, state);
+    drawLog(interp, state);
     drawSunbeams(interp, state);
   }
 
@@ -230,6 +381,10 @@ function render (interp, state) {
     drawFloorTiles(interp, state);
     drawStations(interp, state);
     drawBootView(interp, state);
+  }
+
+  if (view === 'SUMMARY_VIEW') {
+    drawSummaryView(interp, state);
   }
 }
 

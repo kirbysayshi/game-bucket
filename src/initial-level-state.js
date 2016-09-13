@@ -119,6 +119,7 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
 
     money: 0,
     reputation: 0,
+    totalCustomersServed: 0,
 
     levelTime: 0,
     levelMaxTime: GAME_UPDATE_DT * 10 * 300, //600,
@@ -161,6 +162,9 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
         ]
       }
     ],
+
+    log: [],
+    hasLoggedElapsedForPct: {},
 
     stations: {
       offset: {

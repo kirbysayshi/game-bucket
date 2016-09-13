@@ -6,6 +6,7 @@ import {
   ACTIVATE_CEASE,
   NEW_CUSTOMER,
   DEBUG_TOGGLE,
+  LOG_ENTRY_ADDED,
 
   GROUPHEAD,
   CLEAN_PORTAFILTER,
@@ -28,17 +29,40 @@ import {
 
 } from './constants';
 
+import {
+  stationInFrontOfPlayer,
+} from './station-utils';
+
+import {
+  takeItemOfType,
+  addItemOfType,
+  hasItemOfType,
+  removeItemOfType,
+  emptyItems,
+  firstItemType,
+  hasWhichItem,
+  defaultItemSort,
+} from './item-utils';
+
 import initialLevelState from './initial-level-state';
 
 export default function reducer (state, action) {
   
   if (action.type === 'NEXT_LEVEL') {
     const next = initialLevelState(state.screen.cvs, state.tileImage, state.fontImage);
+    // and whatever else needs to be saved between levels...
     next.money = state.money;
     next.reputation = state.reputation;
+    next.totalCustomersServed = state.totalCustomersServed;
     next.view = 'LEVEL_VIEW';
-    // and whatever else needs to be saved...
     return next;
+  }
+
+  if (action.type === 'SHOW_SUMMARY_VIEW') {
+    state.view = 'SUMMARY_VIEW';
+    // compute player summary
+    
+    return state;
   }
 
   if (action.type === DEBUG_TOGGLE) {
@@ -81,6 +105,13 @@ export default function reducer (state, action) {
     if (row >= state.player.field.rows) {
       state.player.position.rows = state.player.field.rows;
     }
+    return state;
+  }
+
+  if (action.type === LOG_ENTRY_ADDED) {
+    const { log } = state;
+    log.push(action.data);
+    while(log.length > 5) log.shift();
     return state;
   }
 
@@ -428,30 +459,29 @@ export default function reducer (state, action) {
         return state;
       }
     }
+  }
 
+  if (action.type === 'CUSTOMER_DRINK_READY') {
+    const { player } = state;
     if (
-      playerStation.type === PICKUP_COUNTER
-      && (hasItemOfType(player, FILLED_ESPRESSO_CUP)
-        || hasItemOfType(player, FILLED_CAPPUCCINO_CUP)
-        || hasItemOfType(player, FILLED_AMERICANO_CUP)
-        || hasItemOfType(player, FILLED_STEAMED_MILK_CUP)
-        || hasItemOfType(player, FILLED_HOT_WATER_CUP)
-      )
+      hasItemOfType(player, FILLED_ESPRESSO_CUP)
+      || hasItemOfType(player, FILLED_CAPPUCCINO_CUP)
+      || hasItemOfType(player, FILLED_AMERICANO_CUP)
+      || hasItemOfType(player, FILLED_STEAMED_MILK_CUP)
+      || hasItemOfType(player, FILLED_HOT_WATER_CUP)
     ) {
+
       const type = firstItemType(player);
       const item = removeItemOfType(player, type);
       const { customers } = state;
-      const closestIdx = customers.findIndex(c => c.wants.type === type);
-      if (closestIdx > -1) {
-        if (item.wellBrewed) {
-          state.reputation += 10;
-        }
-
-        customers.splice(closestIdx, 1);
-        positionCustomers(customers);
-      } else {
-        // make some sort of error appear?
+      const closestIdx = action.data;
+      if (item.wellBrewed) {
+        state.reputation += 10;
       }
+
+      state.totalCustomersServed += 1;
+      customers.splice(closestIdx, 1);
+      positionCustomers(state);
     }
   }
 
@@ -467,70 +497,4 @@ function positionCustomers (state) {
       cols: Math.floor(SPRITE_COLS / 2),
     }
   })
-}
-
-function stationInFrontOfPlayer (state) {
-  // what station the player is in front of
-  // what is the player holding
-  const { player, } = state;
-  const { position, } = state.player;
-  const { entries, } = state.stations;
-  const station = entries[position.rows];
-  return station;
-}
-
-function takeItemOfType (taker, giver, type) {
-  const idx = giver.has.findIndex(item => item.type === type);
-  if (idx === -1) return;
-  const item = giver.has.splice(idx, 1);
-  taker.has.push(item[0]);
-  taker.has.sort(defaultItemSort);
-}
-
-function addItemOfType (taker, type, sprite) {
-  const item = { type, sprite: sprite || type };
-  taker.has.push(item);
-  taker.has.sort(defaultItemSort);
-  return item;
-}
-
-function hasItemOfType (giver, type) {
-  return giver.has.find(item => item.type === type);
-}
-
-function removeItemOfType (giver, type) {
-  const idx = giver.has.findIndex(item => item.type === type);
-  if (idx === -1) return;
-  return giver.has.splice(idx, 1)[0];
-}
-
-function emptyItems (giver) {
-  giver.has.length = 0;
-}
-
-function firstItemType(giver) {
-  return giver.has[0].type;
-}
-
-function hasWhichItem(giver, types) {
-  for (let i = 0; i < types.length; i++) {
-    if (giver.has.find(item => item.type === types[i])) {
-      return types[i];
-    }
-  }
-  return false;
-}
-
-function defaultItemSort (a, b) {
-  // Always attempt to sort the portafilter higher in the array,
-  // since later things are drawn last.
-  if (a.type === CLEAN_PORTAFILTER
-    || a.type === FILLED_PORTAFILTER
-  ) return 1;
-
-  if (b.type === CLEAN_PORTAFILTER
-    || b.type === FILLED_PORTAFILTER
-  ) return -1;
-
-  return 0;
 }
