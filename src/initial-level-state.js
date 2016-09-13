@@ -34,7 +34,7 @@ import {
 
 } from './constants';
 
-export default function initialState (cvs, tileImage, fontImage) {
+export default function initialLevelState (cvs, tileImage, fontImage) {
   const SPRITE_SIZE = 12;
   const SPRITE_COLS = 9;
   const SPRITE_ROWS = 16;
@@ -79,9 +79,9 @@ export default function initialState (cvs, tileImage, fontImage) {
     '0,9-2,9': DECORATIVE_PLANT,
   };
 
-  const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪:█';
+  const fontChrOrder = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?&.\'-○✗❤★♪:█,';
   const fontChrWidths = {
-    2: 'ilI!.\':',
+    2: 'ilI!.\':,',
     3: 't1',
     4: 'abcdefghjknopqrsuvxyzL?-',
     5: 'ABCDEFGHJKNOPRSUZ023456789& █',
@@ -95,6 +95,8 @@ export default function initialState (cvs, tileImage, fontImage) {
     // Whether to show the debug state info
     debug: false,
 
+    view: 'BOOT_GAME_VIEW', //'LEVEL_VIEW',
+
     SPRITE_SIZE,
     SPRITE_COLS,
     SPRITE_ROWS,
@@ -104,6 +106,7 @@ export default function initialState (cvs, tileImage, fontImage) {
     tileSet,
     tileMap,
 
+    fontImage,
     fontImageWhite: fontImage,
     fontImageBlack,
     fontChrWidths,
@@ -118,7 +121,7 @@ export default function initialState (cvs, tileImage, fontImage) {
     reputation: 0,
 
     levelTime: 0,
-    levelMaxTime: GAME_UPDATE_DT * 10 * 600,
+    levelMaxTime: GAME_UPDATE_DT * 10 * 10, //600,
 
     sun: {
       position: { start: 0, end: 0, },

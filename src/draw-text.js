@@ -6,7 +6,7 @@ import {
 // NOTE: positioning the initial text uses the screen scale, but individual
 // characters do not to allow for more text on the screen at the time.
 
-export default function drawText (state, str, col, row, color=FONT_COLOR_WHITE) {
+export default function drawText (state, str, col, row, color=FONT_COLOR_WHITE, fontScale=1) {
   const {
     SPRITE_SIZE,
 
@@ -47,11 +47,11 @@ export default function drawText (state, str, col, row, color=FONT_COLOR_WHITE) 
       // draw to accumulated position on screen
       screen.ctx.drawImage(fontImage,
         sheetX, 0, chrToWidth[c], fontImage.height,
-        x, y, chrToWidth[c], fontImage.height
+        x, y, chrToWidth[c] * fontScale, fontImage.height * fontScale
       );
     }
 
     // For next char
-    x += chrToWidth[c];
+    x += chrToWidth[c] * fontScale;
   })
 }

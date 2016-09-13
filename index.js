@@ -4,8 +4,8 @@ import loadImage from './lib/load-image';
 import Loop from './lib/loop';
 //import swipeDetect from './lib/swipe-detect';
 
-import initialState from './src/initial-state';
-import reducer from './src/reducer';
+import initialLevelState from './src/initial-level-state';
+import reducer from './src/level-reducer';
 import drawPlayer from './src/draw-player';
 import drawStations from './src/draw-stations';
 import drawText from './src/draw-text';
@@ -13,6 +13,7 @@ import drawCustomers from './src/draw-customers';
 import drawScore from './src/draw-score';
 import drawFloorTiles from './src/draw-floor-tiles';
 import drawSunbeams from './src/draw-sunbeams';
+import drawBootView from './src/draw-boot-view';
 
 import {
   RENDER_UPDATE_DT,
@@ -45,7 +46,7 @@ function boot () {
     loadImage('assets/m05-short.png'),
   ]).then(([tileImage, fontImage]) => {
 
-    const store = new Store(reducer, initialState(window.c, tileImage, fontImage));
+    const store = new Store(reducer, initialLevelState(window.c, tileImage, fontImage));
 
     store.dispatch({ type: 'LEVEL_INIT', data: 1 });
     //store.dispatch({ type: 'LEVEL_INIT', });
@@ -80,7 +81,7 @@ function boot () {
         const state = store.getState();
 
         if (state.levelTime >= state.levelMaxTime) {
-          store.dispatch({  })
+          store.dispatch({ type: 'NEXT_LEVEL' })
         }
       },
     });
@@ -102,11 +103,7 @@ function boot () {
       // These may need to be more complicated actions, such as dispatching
       // and error animation / sound if already holding something or incompatible
       // right arrow
-      if (e.which === 39) {
-        if (!store.getState().player.isActivating) {
-          store.dispatch({ type: ACTIVATE });
-        }
-      }
+      if (e.which === 39) { store.dispatch(actionActivate()); }
       // left arrow
       //if (e.which === 37) store.dispatch({ type: 'PICKUP' });
 
@@ -157,17 +154,54 @@ function boot () {
   });
 }
 
-function render (interp, state) {
-  const { screen, SPRITE_ROWS, SPRITE_COLS, } = state;
-  screen.ctx.fillStyle = '#333333';
-  screen.ctx.fillRect(0, 0, screen.width, screen.height);
+const actionMaybeNextLevel = () => (dispatch, getState) => {
+  const state = getState();
 
-  drawFloorTiles(interp, state);
-  drawPlayer(interp, state);
-  drawStations(interp, state);
-  drawCustomers(interp, state);
-  drawScore(interp, state);
-  drawSunbeams(interp, state);
+  // Level complete!
+  if (state.levelTime >= state.levelMaxTime) {
+    dispatch({ type: 'HALT_PLAYER_LEVEL_CONTROL' });
+    dispatch({ type: 'SHOW_SUMMARY_SCREEN' });
+  }
+}
+
+const actionActivate = () => (dispatch, getState) => {
+  const state = getState();
+
+  if (state.view === 'LEVEL_VIEW') {
+    if (!state.player.isActivating) {
+      return dispatch({ type: ACTIVATE });
+    }
+  }
+
+  if (state.view === 'BOOT_GAME_VIEW') {
+    return dispatch({ type: 'NEXT_LEVEL' });
+  }
+
+  if (state.view === 'LEVEL_SUMMARY_VIEW') {
+    dispatch({ type: 'NEXT_LEVEL' });
+    dispatch({ type: 'RESUME_PLAYER_LEVEL_CONTROL' });
+    return;
+  }
+}
+
+function render (interp, state) {
+  const { screen, view, } = state;
+  screen.ctx.clearRect(0, 0, screen.width, screen.height);
+
+  if (view === 'LEVEL_VIEW') {
+    drawFloorTiles(interp, state);
+    drawPlayer(interp, state);
+    drawStations(interp, state);
+    drawCustomers(interp, state);
+    drawScore(interp, state);
+    drawSunbeams(interp, state);
+  }
+
+  if (view === 'BOOT_GAME_VIEW') {
+    drawFloorTiles(interp, state);
+    drawStations(interp, state);
+    drawBootView(interp, state);
+  }
 }
 
 boot();

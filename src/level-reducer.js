@@ -28,9 +28,18 @@ import {
 
 } from './constants';
 
+import initialLevelState from './initial-level-state';
+
 export default function reducer (state, action) {
   
-  // TODO: figure out some sort of immutability helper. maybe just ... ?
+  if (action.type === 'NEXT_LEVEL') {
+    const next = initialLevelState(state.screen.cvs, state.tileImage, state.fontImage);
+    next.money = state.money;
+    next.reputation = state.reputation;
+    next.view = 'LEVEL_VIEW';
+    // and whatever else needs to be saved...
+    return next;
+  }
 
   if (action.type === DEBUG_TOGGLE) {
     state.debug = !state.debug;
@@ -74,7 +83,7 @@ export default function reducer (state, action) {
     return state;
   }
 
-  if (action.type === GAME_TICK) {
+  if (action.type === GAME_TICK && state.view === 'LEVEL_VIEW') {
 
     state.levelTime += GAME_UPDATE_DT;
 
