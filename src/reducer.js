@@ -24,6 +24,8 @@ import {
   HOT_WATER,
   STEAMER,
 
+  GAME_UPDATE_DT,
+
 } from './constants';
 
 export default function reducer (state, action) {
@@ -73,6 +75,9 @@ export default function reducer (state, action) {
   }
 
   if (action.type === GAME_TICK) {
+
+    state.levelTime += GAME_UPDATE_DT;
+
     // look through all active timers and increment
     // grouphead will flow without player sitting there
     // grinder requires player to sit there

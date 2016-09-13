@@ -2,6 +2,7 @@ import { Store } from 'naivedux';
 import Screen from './lib/screen';
 import loadImage from './lib/load-image';
 import Loop from './lib/loop';
+//import swipeDetect from './lib/swipe-detect';
 
 import initialState from './src/initial-state';
 import reducer from './src/reducer';
@@ -11,8 +12,12 @@ import drawText from './src/draw-text';
 import drawCustomers from './src/draw-customers';
 import drawScore from './src/draw-score';
 import drawFloorTiles from './src/draw-floor-tiles';
+import drawSunbeams from './src/draw-sunbeams';
 
 import {
+  RENDER_UPDATE_DT,
+  GAME_UPDATE_DT,
+
   FONT_COLOR_WHITE,
   FONT_COLOR_BLACK,
 
@@ -42,6 +47,9 @@ function boot () {
 
     const store = new Store(reducer, initialState(window.c, tileImage, fontImage));
 
+    store.dispatch({ type: 'LEVEL_INIT', data: 1 });
+    //store.dispatch({ type: 'LEVEL_INIT', });
+
     store.subscribe(() => {
 
       const state = store.getState();
@@ -62,12 +70,18 @@ function boot () {
     });
 
     const loopCtrl = Loop({
-      drawTime: 1000 / 10,
-      updateTime: 1000 / 10,
+      drawTime: RENDER_UPDATE_DT,
+      updateTime: GAME_UPDATE_DT,
       draw: (interp) => {},
       update: (dt) => {
         // dispatch a GAME_TICK event that the reducer applies only for timers currently ACTIVE
         store.dispatch({ type: GAME_TICK, data: dt });
+
+        const state = store.getState();
+
+        if (state.levelTime >= state.levelMaxTime) {
+          store.dispatch({  })
+        }
       },
     });
 
@@ -153,26 +167,7 @@ function render (interp, state) {
   drawStations(interp, state);
   drawCustomers(interp, state);
   drawScore(interp, state);
-
-  const rowHeight = screen.height / SPRITE_ROWS;
-  screen.ctx.save();
-
-  screen.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-  screen.ctx.beginPath();
-  screen.ctx.moveTo(screen.width, rowHeight * 2);
-  screen.ctx.lineTo(0, rowHeight * 10);
-  screen.ctx.lineTo(0, 0);
-  screen.ctx.lineTo(screen.width, 0);
-  screen.ctx.fill();
-
-  screen.ctx.fillStyle = 'rgba(32, 32, 32, 0.2)';
-  screen.ctx.beginPath();
-  screen.ctx.moveTo(screen.width, rowHeight * 2);
-  screen.ctx.lineTo(0, rowHeight * 10);
-  screen.ctx.lineTo(0, screen.height);
-  screen.ctx.lineTo(screen.width, screen.height);
-  screen.ctx.fill();
-  screen.ctx.restore();
+  drawSunbeams(interp, state);
 }
 
 boot();

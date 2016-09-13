@@ -16,8 +16,9 @@ export default function drawFloorTiles (iterp, state) {
   const rowsMax = stations.entries.length;
 
   // decode tile map
-  Object.keys(tileMap).forEach(range => {
-
+  const coords = Object.keys(tileMap);
+  for (let i = 0; i < coords.length; i++) {
+    let range = coords[i];
     const tileKey = range;
 
     // Single tiles are just ranges.
@@ -38,5 +39,5 @@ export default function drawFloorTiles (iterp, state) {
         drawNamedTileAtColRow(state, tileMap[tileKey], i, j);
       }
     }
-  });
+  };
 }

@@ -30,6 +30,7 @@ import {
   CHECKMARK,
 
   ROWS_SPRITE_OFFSET,
+  GAME_UPDATE_DT,
 
 } from './constants';
 
@@ -116,6 +117,15 @@ export default function initialState (cvs, tileImage, fontImage) {
     money: 0,
     reputation: 0,
 
+    levelTime: 0,
+    levelMaxTime: GAME_UPDATE_DT * 10 * 600,
+
+    sun: {
+      position: { start: 0, end: 0, },
+      height: { start: 0, end: 0, },
+      distance: { start: 0, end: 0 },
+    },
+
     stations: {
       offset: {
         cols: 2,
@@ -169,6 +179,12 @@ export default function initialState (cvs, tileImage, fontImage) {
       // { type: 'CLEAN_PORTAFILTER' }
     }
   };
+
+  initial.sun.position.start = initial.screen.height * 2;
+  initial.sun.position.end = -initial.screen.height / 3;
+  initial.sun.distance.start = initial.sun.distance.end = initial.screen.width / 2;
+  initial.sun.height.start = initial.screen.height / 2;
+  initial.sun.height.end = initial.screen.height * 3;
 
   return initial;
 }
