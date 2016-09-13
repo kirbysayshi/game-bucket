@@ -123,6 +123,32 @@ function boot () {
     document.body.addEventListener('keyup', e => {
       if (e.which === 39) store.dispatch({ type: ACTIVATE_CEASE });
     }, false);
+
+    // Add touch controls!
+    if ('ontouchstart' in window) {
+      window.scrollTo(0,0);
+      window.ipt.style.display = 'block';
+
+      window.btnup.addEventListener('touchend', e => {
+        e.preventDefault();
+        store.dispatch({ type: SWIPE_UP });
+      }, false);
+
+      window.btndown.addEventListener('touchend', e => {
+        e.preventDefault();
+        store.dispatch({ type: SWIPE_DOWN });
+      }, false);
+
+      window.btnact.addEventListener('touchstart', e => {
+        e.preventDefault();
+        store.dispatch(actionActivate());
+      }, false);
+
+      window.btnact.addEventListener('touchend', e => {
+        e.preventDefault();
+        store.dispatch({ type: ACTIVATE_CEASE });
+      }, false);
+    }
   });
 }
 
@@ -372,7 +398,7 @@ function render (interp, state) {
     drawPlayer(interp, state);
     drawStations(interp, state);
     drawCustomers(interp, state);
-    drawScore(interp, state);
+    //drawScore(interp, state);
     drawLog(interp, state);
     drawSunbeams(interp, state);
   }

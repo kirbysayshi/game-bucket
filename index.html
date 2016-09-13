@@ -7,19 +7,26 @@
     padding:0;
     overflow:hidden;
     background-color:#000;
-    position:relative;}
+    position:relative;
+  }
+  body > div { position: relative; }
   canvas,img{
     image-rendering: -moz-crisp-edges;
     image-rendering: -webkit-crisp-edges;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select:none !important;
+    -o-user-select: none;
+    user-select: none;
   }
   #ipt {
+    display: none;
     position: absolute;
-    top: 66vh;
+    bottom: 0;
     opacity: 0.4;
-    height: 35vh;
-    width: 100vw;
+    height: 20%;
+    width: 100%;
     text-align: center;
   }
   #ipt img {
@@ -28,4 +35,4 @@
     width: 24vw;
   }
   </style>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"/><meta name="apple-mobile-web-app-capable" content="yes" /><body><canvas id=c></canvas><script src=bundle.js></script><div id=ipt><!--<img src="assets/up.svg"><img src="assets/down.svg"><img src="assets/act.svg"></div>--></body>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"/><meta name="apple-mobile-web-app-capable" content="yes" /><body><div><canvas id=c></canvas><div id=ipt><img src="assets/down.svg" id=btndown><img src="assets/up.svg" id=btnup><img src="assets/act.svg" id=btnact></div></div><script src=bundle.js></script></body>
