@@ -31,8 +31,8 @@
     "serve": "http-server",
     "uglify": "uglifyjs bundle.js --compress --mangle -o bundle.min.js && mv -f bundle.min.js bundle.js",
     "uglify-view": "uglifyjs bundle.js --compress --mangle --beautify",
-    "optimize-images": "shopt -s extglob; for f in assets/m05-short.png assets/tiles.png; do convert $f PNG8:\"$f\"8 && mv -f \"$f\"8 ${f%.*}.png; done;",
-    "zip": "rm -rf game.zip && NODE_ENV=production npm run build && npm run uglify && npm run optimize-images && zip -X -r game.zip index.html bundle.js assets/*.png && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
+    "optimize-images": "for f in assets/m05-short.png assets/tiles.png; do convert $f PNG8:\"$f\"8 && mv -f \"$f\"8 ${f%.*}.png; done;",
+    "zip": "rm -rf game.zip && NODE_ENV=production npm run build && npm run uglify && npm run optimize-images && zip -X -r game.zip index.html bundle.js assets/*.png assets/*.svg && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
   },
   "author": "Drew Petersen <senofpeter@gmail.com>",
   "license": "MIT"
