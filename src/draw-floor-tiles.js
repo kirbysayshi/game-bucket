@@ -10,10 +10,6 @@ export default function drawFloorTiles (iterp, state) {
 
   // stations form a box, everything else is outside
   const { stations, screen, tileSet, tileMap, SPRITE_COLS, SPRITE_ROWS, } = state;
-  const colsMin = 0;
-  const rowsMin = 0;
-  const colsMax = stations.offset.cols;
-  const rowsMax = stations.entries.length;
 
   // decode tile map
   const coords = Object.keys(tileMap);

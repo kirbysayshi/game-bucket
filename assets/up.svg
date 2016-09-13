@@ -1,10 +1,1 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="108px" height="128.334px" viewBox="18.616 4.392 108 128.334" style="enable-background:new 18.616 4.392 108 128.334;"
-	 xml:space="preserve">
-<path style="fill:#231F20;" d="M126.616,119.727c0-10.871,0-91.464,0-102.334c0-12-9.052-13-9.052-13H27.668c0,0-9.052,1-9.052,13
-	c0,10.87,0,91.463,0,102.334c0,12,9.052,13,9.052,13h89.896C117.564,132.727,126.616,131.727,126.616,119.727z M72.616,47.682
-	l23.75,23.25h-13v18.5h-10.75h-10.75v-18.5h-13L72.616,47.682z"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="128.334" viewBox="18.616 4.392 108 128.334"><path d="M126.616 119.727V17.393c0-12-9.052-13-9.052-13H27.668s-9.052 1-9.052 13v102.334c0 12 9.052 13 9.052 13h89.896s9.052-1 9.052-13zm-54-72.045l23.75 23.25h-13v18.5h-21.5v-18.5h-13l23.75-23.25z" fill="#231f20"/></svg>
