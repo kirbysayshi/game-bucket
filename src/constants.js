@@ -1,7 +1,7 @@
 
 // Timings
 export const RENDER_UPDATE_DT = 1000 / 60;
-export const GAME_UPDATE_DT = 1000 / 100;
+export const GAME_UPDATE_DT = 1000 / 10;
 
 // Actions
 export const GAME_TICK = 'GAME_TICK';
