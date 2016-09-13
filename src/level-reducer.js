@@ -54,6 +54,7 @@ export default function reducer (state, action) {
     next.money = state.money;
     next.reputation = state.reputation;
     next.totalCustomersServed = state.totalCustomersServed;
+    next.levelIdx = state.view === 'BOOT_GAME_VIEW' ? 0 : state.levelIdx + 1;
     next.view = 'LEVEL_VIEW';
     return next;
   }
@@ -412,7 +413,7 @@ export default function reducer (state, action) {
         removeItemOfType(player, FILLED_PORTAFILTER);
         addItemOfType(player, CLEAN_PORTAFILTER);
         return state;
-      } else if (!hasItemOfType(player, CLEAN_PORTAFILTER)) {
+      } else if (player.has.length && !hasItemOfType(player, CLEAN_PORTAFILTER)) {
         removeItemOfType(player, firstItemType(player));
         return state;
       }

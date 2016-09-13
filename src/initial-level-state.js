@@ -122,7 +122,7 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
     totalCustomersServed: 0,
 
     levelTime: 0,
-    levelMaxTime: GAME_UPDATE_DT * 10 * 300, //600,
+    levelMaxTime: GAME_UPDATE_DT * 10 * 100, //600,
 
     sun: {
       position: { start: 0, end: 0, },
@@ -152,15 +152,51 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
 
       // level 1: only espresso
       {
-
         wants: [
           {
             type: FILLED_ESPRESSO_CUP,
             rarity: 0,
-            minimumTime: GAME_UPDATE_DT * 10 * 30, // seconds
+            minimumTime: GAME_UPDATE_DT * 10 * 10, // seconds
           }
         ]
-      }
+      },
+
+      // level 2: espresso + americano
+      {
+        wants: [
+          {
+            type: FILLED_AMERICANO_CUP,
+            rarity: 0.2,
+            minimumTime: GAME_UPDATE_DT * 10 * 10, // seconds
+          },
+          {
+            type: FILLED_ESPRESSO_CUP,
+            rarity: 0,
+            minimumTime: GAME_UPDATE_DT * 10 * 10, // seconds
+          }
+        ]
+      },
+
+      // level 3: cappuccino
+      {
+        wants: [
+          {
+            type: FILLED_AMERICANO_CUP,
+            rarity: 0.5,
+            minimumTime: GAME_UPDATE_DT * 10 * 10, // seconds
+          },
+          {
+            type: FILLED_CAPPUCCINO_CUP,
+            rarity: 0.3,
+            minimumTime: GAME_UPDATE_DT * 10 * 10, // seconds
+          },
+          {
+            type: FILLED_ESPRESSO_CUP,
+            rarity: 0.1,
+            minimumTime: GAME_UPDATE_DT * 10 * 10, // seconds
+          }
+        ]
+      },
     ],
 
     log: [],

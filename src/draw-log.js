@@ -6,7 +6,7 @@ export default function drawLog (interp, state) {
     log,
   } = state;
 
-  let rows = 10.5;
+  let rows = 10;
   const logLineHeight = 0.5
 
   drawText(state, 'THOUGHTS', COLS_SPRITE_OFFSET, rows);
