@@ -256,8 +256,8 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
     }
   };
 
-  initial.sun.position.start = initial.screen.height * 2;
-  initial.sun.position.end = -initial.screen.height / 3;
+  initial.sun.position.start = initial.screen.height * 4;
+  initial.sun.position.end = initial.screen.height / 3;
   initial.sun.distance.start = initial.sun.distance.end = initial.screen.width / 2;
   initial.sun.height.start = initial.screen.height / 2;
   initial.sun.height.end = initial.screen.height * 3;
