@@ -127,7 +127,6 @@ function boot () {
 
     // Add touch controls!
     if ('ontouchstart' in window) {
-      window.scrollTo(0,0);
       window.ipt.style.display = 'block';
 
       window.btnup.addEventListener('touchend', e => {
