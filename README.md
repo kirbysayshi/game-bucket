@@ -9,6 +9,8 @@ The game uses sprites by Lisa Leung, a redux-clone called naivedux (https://gith
 
 What follows is the dev log I wrote while developing the game over the course of approximately 7 days (at most 36 hours of dedicated time).
 
+TODO: add movies + screenshots.
+
 Log
 ===
 
