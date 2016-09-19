@@ -3,6 +3,10 @@ import {
   SHOP_DOOR,
 } from './constants';
 
+import {
+  easeInExpo,
+} from './ease-in-expo';
+
 export default function drawSunbeams (interp, state) {
 
   const {
@@ -12,7 +16,8 @@ export default function drawSunbeams (interp, state) {
     sun,
     screen,
   } = state;
-  const pct = state.levelTime / state.levelMaxTime;
+  const easedLevelTime = easeInExpo(state.levelTime, 0, state.levelMaxTime, state.levelMaxTime);
+  const pct = easedLevelTime / state.levelMaxTime;
 
   const sunX = -1 * sun.distance.start;
   const sunY = sun.position.start + ((sun.position.end - sun.position.start) * pct);
