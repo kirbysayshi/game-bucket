@@ -148,6 +148,9 @@ function boot () {
         e.preventDefault();
         store.dispatch({ type: ACTIVATE_CEASE });
       }, false);
+
+      // prevent scrolling on mobile.
+      document.body.addEventListener('touchstart', e => e.preventDefault());
     }
   });
 }
