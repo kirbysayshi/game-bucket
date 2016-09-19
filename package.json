@@ -1,6 +1,6 @@
 {
   "name": "game-bucket",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)!",
   "main": "index.js",
   "dependencies": {
