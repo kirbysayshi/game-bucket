@@ -44,10 +44,19 @@ import {
   PICKUP_COUNTER,
 
   GAME_TICK,
+  NEXT_LEVEL,
+  CUSTOMER_DRINK_READY,
 
   FILLED_AMERICANO_CUP,
   FILLED_CAPPUCCINO_CUP,
   FILLED_ESPRESSO_CUP,
+
+  BOOT_GAME_VIEW,
+  BETWEEN_LEVEL_VIEW,
+  SHOW_SUMMARY_VIEW,
+  LEVEL_VIEW,
+  SUMMARY_VIEW,
+
 } from './src/constants';
 
 // Espresso: the coffee beverage produced by a pump or lever espresso machine. This Italian word describes a beverage made from 7 grams (+/- 2 grams) of finely ground coffee, producing 1-1.5 ounces (30-45ml) of extracted beverage under 9 bar (135psi) of brewing pressure at brewing temperatures of between 194 and 204 degrees Fahrenheit, over a period of 25 seconds (+/- 5 seconds) of brew time. Espresso is what this whole definition list is about!
@@ -160,16 +169,16 @@ const actionMaybeNextLevel = () => (dispatch, getState) => {
 
   // Level complete!
   if (
-    state.view === 'LEVEL_VIEW'
+    state.view === LEVEL_VIEW
     && state.levelTime >= state.levelMaxTime
   ) {
 
     if (state.levelIdx + 1 < state.levels.length) {
       //return dispatch({ type: 'NEXT_LEVEL' });
-      return dispatch({ type: 'BETWEEN_LEVEL_VIEW' });
+      return dispatch({ type: BETWEEN_LEVEL_VIEW });
     } else {
       // end game
-      return dispatch({ type: 'SHOW_SUMMARY_VIEW' });
+      return dispatch({ type: SHOW_SUMMARY_VIEW });
     }
 
     //dispatch({ type: 'HALT_PLAYER_LEVEL_CONTROL' });
@@ -180,7 +189,7 @@ const actionMaybeNextLevel = () => (dispatch, getState) => {
 const actionActivate = () => (dispatch, getState) => {
   const state = getState();
 
-  if (state.view === 'LEVEL_VIEW') {
+  if (state.view === LEVEL_VIEW) {
 
     const playerStation = stationInFrontOfPlayer(state);
     const { player } = state;
@@ -200,7 +209,7 @@ const actionActivate = () => (dispatch, getState) => {
         }
 
         return dispatch({
-          type: 'CUSTOMER_DRINK_READY',
+          type: CUSTOMER_DRINK_READY,
           data: closestIdx,
         });
       }
@@ -211,12 +220,12 @@ const actionActivate = () => (dispatch, getState) => {
     }
   }
 
-  if (state.view === 'BOOT_GAME_VIEW') {
-    return dispatch({ type: 'NEXT_LEVEL' });
+  if (state.view === BOOT_GAME_VIEW) {
+    return dispatch({ type: NEXT_LEVEL });
   }
 
-  if (state.view === 'BETWEEN_LEVEL_VIEW') {
-    return dispatch({ type: 'NEXT_LEVEL'});
+  if (state.view === BETWEEN_LEVEL_VIEW) {
+    return dispatch({ type: NEXT_LEVEL });
   }
 
   /*if (state.view === 'LEVEL_SUMMARY_VIEW') {
@@ -317,7 +326,7 @@ const actionMaybeAddCustomer = () => (dispatch, getState) => {
 
   const state = getState();
 
-  if (state.view !== 'LEVEL_VIEW') return;
+  if (state.view !== LEVEL_VIEW) return;
 
   const {
     lastCustomerSpawnDT,
@@ -401,7 +410,7 @@ function render (interp, state) {
   const { screen, view, } = state;
   screen.ctx.clearRect(0, 0, screen.width, screen.height);
 
-  if (view === 'LEVEL_VIEW') {
+  if (view === LEVEL_VIEW) {
     drawFloorTiles(interp, state);
     drawPlayer(interp, state);
     drawStations(interp, state);
@@ -411,19 +420,19 @@ function render (interp, state) {
     drawSunbeams(interp, state);
   }
 
-  if (view === 'BETWEEN_LEVEL_VIEW') {
+  if (view === BETWEEN_LEVEL_VIEW) {
     drawFloorTiles(interp, state);
     drawStations(interp, state);
     drawMidLevelView(interp, state);
   }
 
-  if (view === 'BOOT_GAME_VIEW') {
+  if (view === BOOT_GAME_VIEW) {
     drawFloorTiles(interp, state);
     drawStations(interp, state);
     drawBootView(interp, state);
   }
 
-  if (view === 'SUMMARY_VIEW') {
+  if (view === SUMMARY_VIEW) {
     drawFloorTiles(interp, state);
     drawStations(interp, state);
     drawSummaryView(interp, state);

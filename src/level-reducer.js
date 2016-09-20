@@ -7,6 +7,9 @@ import {
   NEW_CUSTOMER,
   DEBUG_TOGGLE,
   LOG_ENTRY_ADDED,
+  NEXT_LEVEL,
+  SHOW_SUMMARY_VIEW,
+  CUSTOMER_DRINK_READY,
 
   GROUPHEAD,
   CLEAN_PORTAFILTER,
@@ -27,6 +30,11 @@ import {
 
   GAME_UPDATE_DT,
   REPUTATION_GAINED,
+
+  BETWEEN_LEVEL_VIEW,
+  BOOT_GAME_VIEW,
+  LEVEL_VIEW,
+  SUMMARY_VIEW,
 
 } from './constants';
 
@@ -49,24 +57,24 @@ import initialLevelState from './initial-level-state';
 
 export default function reducer (state, action) {
   
-  if (action.type === 'BETWEEN_LEVEL_VIEW') {
-    state.view = 'BETWEEN_LEVEL_VIEW';
+  if (action.type === BETWEEN_LEVEL_VIEW) {
+    state.view = BETWEEN_LEVEL_VIEW;
     return state;
   }
 
-  if (action.type === 'NEXT_LEVEL') {
+  if (action.type === NEXT_LEVEL) {
     const next = initialLevelState(state.screen.cvs, state.tileImage, state.fontImage);
     // and whatever else needs to be saved between levels...
     next.money = state.money;
     next.reputation = state.reputation;
     next.totalCustomersServed = state.totalCustomersServed;
-    next.levelIdx = state.view === 'BOOT_GAME_VIEW' ? 0 : state.levelIdx + 1;
-    next.view = 'LEVEL_VIEW';
+    next.levelIdx = state.view === BOOT_GAME_VIEW ? 0 : state.levelIdx + 1;
+    next.view = LEVEL_VIEW;
     return next;
   }
 
-  if (action.type === 'SHOW_SUMMARY_VIEW') {
-    state.view = 'SUMMARY_VIEW';
+  if (action.type === SHOW_SUMMARY_VIEW) {
+    state.view = SUMMARY_VIEW;
     // compute player summary
     state.customers.forEach(customer => {
       if (customer.paid === true) {
@@ -127,7 +135,7 @@ export default function reducer (state, action) {
     return state;
   }
 
-  if (action.type === GAME_TICK && state.view === 'LEVEL_VIEW') {
+  if (action.type === GAME_TICK && state.view === LEVEL_VIEW) {
 
     state.levelTime += GAME_UPDATE_DT;
 
@@ -473,7 +481,7 @@ export default function reducer (state, action) {
     }
   }
 
-  if (action.type === 'CUSTOMER_DRINK_READY') {
+  if (action.type === CUSTOMER_DRINK_READY) {
     const { player } = state;
     if (
       hasItemOfType(player, FILLED_ESPRESSO_CUP)

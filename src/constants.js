@@ -12,6 +12,8 @@ export const ACTIVATE_CEASE = 'ACTIVATE_CEASE';
 export const NEW_CUSTOMER = 'NEW_CUSTOMER';
 export const DEBUG_TOGGLE = 'DEBUG_TOGGLE';
 export const LOG_ENTRY_ADDED = 'LOG_ENTRY_ADDED';
+export const NEXT_LEVEL = 'NEXT_LEVEL';
+export const CUSTOMER_DRINK_READY = 'CUSTOMER_DRINK_READY';
 
 // Station types
 export const ORDER_COUNTER = 'ORDER_COUNTER';
@@ -54,3 +56,10 @@ export const REPUTATION_GAINED = 10;
 // Fonts!
 export const FONT_COLOR_WHITE = 'FONT_COLOR_WHITE';
 export const FONT_COLOR_BLACK = 'FONT_COLOR_BLACK';
+
+// Views
+export const BOOT_GAME_VIEW = 'BOOT_GAME_VIEW';
+export const BETWEEN_LEVEL_VIEW = 'BETWEEN_LEVEL_VIEW';
+export const SHOW_SUMMARY_VIEW = 'SHOW_SUMMARY_VIEW';
+export const LEVEL_VIEW = 'LEVEL_VIEW';
+export const SUMMARY_VIEW = 'SUMMARY_VIEW';
