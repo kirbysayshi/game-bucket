@@ -208,6 +208,7 @@ export const actionMaybeAddCustomer = () => (dispatch, getState) => {
 
   level.wants.forEach(wants => {
     if (hasSpawnedOneThisTick) return;
+    if (wants.hasSpawnedOnce) return;
 
     // Only spawn a customer if enough time has passed, or this is the first
     // tick and we've passed the INITIAL_MIN_SPAWN_ELAPSED
@@ -220,22 +221,35 @@ export const actionMaybeAddCustomer = () => (dispatch, getState) => {
       if (roll > wants.rarity) {
         // SPAWN!
         // find a name
-        let possibles = customerNames.filter(possible => possible.hasSpawned === false);
-        if (!possibles.length) {
-          // reset spawn status
-          customerNames.forEach(possible => possible.hasSpawned = false);
-          possibles = customerNames;
-        }
 
-        const nameIdx = Math.floor(rng() * (possibles.length - 1));
-        const possible = possibles[nameIdx];
-        // MUTATION: This should be a dispatch.
-        possible.hasSpawned = true;
+        let name;
+        let isRare = false;
+
+        if (!wants.name) {
+          let possibles = customerNames.filter(possible => possible.hasSpawned === false);
+          if (!possibles.length) {
+            // reset spawn status
+            customerNames.forEach(possible => possible.hasSpawned = false);
+            possibles = customerNames;
+          }
+
+          const nameIdx = Math.floor(rng() * (possibles.length - 1));
+          const possible = possibles[nameIdx];
+          // MUTATION: This should be a dispatch.
+          possible.hasSpawned = true;
+          name = possible.name;
+        } else {
+          name = wants.name;
+          // MUTATION: this should be a dispatch
+          wants.hasSpawnedOnce = true;
+          isRare = true;
+        }
 
         dispatch({
           type: NEW_CUSTOMER,
           data: {
-            name: possible.name,
+            name: name,
+            rare: isRare,
             wants: {
               type: wants.type,
 
@@ -244,7 +258,9 @@ export const actionMaybeAddCustomer = () => (dispatch, getState) => {
                 ? 'Americano'
                 : wants.type === FILLED_ESPRESSO_CUP
                   ? 'Espresso'
-                  : 'Cappuccino'
+                  : wants.type === FILLED_CAPPUCCINO_CUP
+                    ? 'Cappuccino'
+                    : '??????'
             }
           }
         });

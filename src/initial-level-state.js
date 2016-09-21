@@ -22,6 +22,7 @@ import {
   FILLED_AMERICANO_CUP,
   FILLED_CAPPUCCINO_CUP,
   FILLED_ESPRESSO_CUP,
+  FILLED_STEAMED_MILK_CUP,
   CLEAN_PORTAFILTER,
   FILLED_PORTAFILTER,
   ATTACHED_PORTAFILTER,
@@ -120,6 +121,7 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
     money: 0,
     reputation: 0,
     totalCustomersServed: 0,
+    rareCustomers: [],
 
     levelTime: 0,
     levelMaxTime: GAME_UPDATE_DT * 10 * 100, //600,
@@ -164,6 +166,13 @@ export default function initialLevelState (cvs, tileImage, fontImage) {
       // level 2: espresso + americano
       {
         wants: [
+          {
+            type: FILLED_STEAMED_MILK_CUP,
+            rarity: 0.3,
+            minimumTime: GAME_UPDATE_DT * 10 * 10, // seconds
+            name: 'El Hombre de Leche',
+            hasSpawnedOnce: false,
+          },
           {
             type: FILLED_AMERICANO_CUP,
             rarity: 0.2,

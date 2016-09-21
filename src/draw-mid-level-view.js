@@ -11,6 +11,7 @@ export default function drawMidLevelView (interp, state) {
     tileMap,
     SPRITE_COLS,
     SPRITE_ROWS,
+    rareCustomers,
   } = state;
 
   screen.ctx.fillStyle = 'rgba(0,0,0,0.7)';
@@ -19,6 +20,17 @@ export default function drawMidLevelView (interp, state) {
   // state, str, col, row, color=FONT_COLOR_WHITE, scale=1
   const titleScale = 2;
   drawText(state, 'Shift Complete!', 1, 2, FONT_COLOR_WHITE, titleScale);
-  drawText(state, 'The next night', 1, 4, FONT_COLOR_WHITE, titleScale);
-  drawText(state, '... Begins!', 1, 5, FONT_COLOR_WHITE, titleScale);
+
+  let row = 4;
+  if (rareCustomers.length) {
+    drawText(state, 'Interesting people:', 1, row);
+    rareCustomers.forEach((customer) => {
+      drawText(state, customer.name, 1, row += 0.5);
+    });
+  }
+
+  row++;
+
+  drawText(state, 'The next night', 1, ++row, FONT_COLOR_WHITE, titleScale);
+  drawText(state, '... Begins!', 1, ++row, FONT_COLOR_WHITE, titleScale);
 }

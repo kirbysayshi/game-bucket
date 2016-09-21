@@ -98,20 +98,23 @@ export default function reducer (state, action) {
 
   if (action.type === NEW_CUSTOMER) {
     const { SPRITE_COLS } = state;
-    state.customers.push({
+    const customer = {
       name: action.data.name,
       wants: action.data.wants,
+      rare: action.data.rare,
       paid: false,
       // TODO: compute all customers positions when a new one comes in
       position: {
         rows: 0,
         cols: 0,
       },
-    });
+    };
+    state.customers.push(customer);
+
     positionCustomers(state);
     return state;
   }
-  
+
   if (action.type === SWIPE_UP) {
     const row = state.player.position.rows -= 1;
     if (row < 0) {
@@ -500,8 +503,12 @@ export default function reducer (state, action) {
       }
 
       state.totalCustomersServed += 1;
-      customers.splice(closestIdx, 1);
+      const [customer] = customers.splice(closestIdx, 1);
       positionCustomers(state);
+
+      if (customer && customer.rare) {
+        state.rareCustomers.push(customer);
+      }
     }
   }
 
