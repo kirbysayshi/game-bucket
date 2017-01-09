@@ -1,7 +1,5 @@
 import {
-  Entity,
-  System,
-  destroyEntity,
+  default as Ces,
   systemPropReqs
 } from './lib/ces';
 import {
@@ -12,6 +10,13 @@ import Loop from './lib/loop';
 
 import accelerate from 'pocket-physics/accelerate2d';
 import inertia from 'pocket-physics/inertia2d';
+
+const ces = new Ces();
+const {
+  newEntity: Entity,
+  newSystem: System,
+  destroyEntity,
+} = ces;
 
 // This is an "entity", aka a bag of data, with a special array named `tags`.
 // These tags mark an entity as processable by a system that has matching tags.
