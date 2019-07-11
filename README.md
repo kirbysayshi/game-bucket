@@ -5,9 +5,9 @@ Common game utilities + rollup config, suitable for a small game competition. Li
 
 Includes:
 
-- [Component Entity System](src/ces.js)
-- [Stable Game Loop with interpolation and panic modes](src/loop.js)
-- [Scheduling, for game-time dependent time events](src/time.js)
+- [Component Entity System](lib/ces.js)
+- [Stable Game Loop with interpolation and panic modes](lib/loop.js)
+- [Scheduling, for game-time dependent time events](lib/time.js)
 - JS13K-compatible zip creation + notice of how close you are to the limit: `npm run zip`
 - Rollup, so you still get to use modules and separate files.
 - More? You should make a PR!
@@ -17,9 +17,11 @@ Includes:
 Usage
 -----
 
-Fork this repo, then add / change code in index.js as you see fit! There are two dependencies included, but you can remove those. Rollup ensures that only code you `import` is included!
+Fork this repo, then add / change code in src/index.js as you see fit! There are dependencies included, but you can remove those. Rollup ensures that only code you `import` is included!
 
-The default branch for this repo is `gh-pages`, so it's easy to share your game as well! For example, [index.html](index.html) is available at [[gh-username].github.io/game-bucket/index.html](http://kirbysayshi.github.io/game-bucket/index.html)!
+- Static files can be configured for copying in [rollup.config.js](./rollup.config.js). Default is just `index.html`
+- Static files that are `import`ed are automatically copied into the `dist/` folder by rollup.
+- PNG/ZIP optimizations are handled by scripts in the [tools](/tools) directory. PNGs are handled via tinypng.com, which requires an API key in a file named `.tinypngapi`.
 
 ### `npm run zip`
 
@@ -33,7 +35,9 @@ Build the `bundle.js`. Use `NODE_ENV=production npm run build` to remove debug /
 
 Rebuild quickly for development mode!
 
-### `npm run uglify-view`
+TODO: other steps are now needed.
+
+### `npm run terser:view`
 
 See what the compiled JS will look like, to make sure rollup is treeshaking / hoisting as expected and that dead code is being eliminated. Requires `bundle.js` to exist.
 
