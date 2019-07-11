@@ -2,14 +2,11 @@
   "name": "game-bucket",
   "version": "5.0.2",
   "description": "Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)!",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esmodule.js",
   "files": [
     "dist"
   ],
   "dependencies": {
     "naivedux": "^1.1.0",
-    "parcel-bundler": "^1.9.7",
     "pocket-physics": "^4.0.0",
     "science-halt": "^0.2.0"
   },
@@ -21,31 +18,40 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.5.4",
     "@babel/preset-env": "^7.5.4",
     "@babel/preset-typescript": "^7.3.3",
+    "gh-pages": "^2.0.1",
     "http-server": "^0.9.0",
     "prepublish": "^0.12.5",
     "rollup": "^1.16.7",
     "rollup-plugin-babel": "^4.3.3",
     "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-copy": "^3.0.0",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-replace": "^1.1.0",
+    "rollup-plugin-url": "^2.2.2",
     "svgo": "^0.7.0",
-    "typescript": "^3.5.3",
-    "uglify-js": "^2.6.4"
+    "terser": "^4.1.2",
+    "typescript": "^3.5.3"
   },
   "scripts": {
     "prepublishOnly": "prepublish --entry-node src/index.js",
-
     "type-check": "tsc --noEmit",
-
     "build": "rollup -c",
-    "watch": "rollup -c -w",
-    "serve": "http-server",
-    "uglify": "uglifyjs bundle.js --compress --mangle -o bundle.min.js && mv -f bundle.min.js bundle.js",
-    "uglify-view": "uglifyjs bundle.js --compress --mangle --beautify",
-    "optimize-images": "for f in assets/m05-short.png assets/tiles.png; do convert $f PNG8:\"$f\"8 && mv -f \"$f\"8 ${f%.*}.png; done;",
-    "optimize-svg": "svgo assets",
-    "zip": "rm -rf game.zip && NODE_ENV=production npm run build && npm run uglify && npm run optimize-images && zip -X -r game.zip index.html bundle.js assets/*.png assets/*.svg && ls -lah game.zip && echo $(echo \"$(wc -c < game.zip) - 13312\" | bc) bytes remain"
+    "serve": "http-server dist/",
+    "build:terser": "terser dist/bundle.js --compress --mangle -o dist/bundle.min.js && mv -f dist/bundle.min.js dist/bundle.js",
+    "terser:view": "terser dist/bundle.js --compress --mangle --beautify",
+    "assets:simplify-texture-packer-json": "node tools/shrink-texture-packer-json.js ./assets/sprites.json ./assets/sprites.json",
+    "assets:optimize": "find dist/ -iname '*.png' -exec ./tools/tinypng.sh {} {} \\;",
+    "zip:adv": "./tools/advzip.sh && advzip -z -4 -i 60 dist/game.zip",
+    "zip:create": "pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.bmp *.js && popd",
+    "zip:measure": "echo $(echo \"13312 - $(wc -c < dist/game.zip)\" | bc) bytes remain",
+    "zip": "yarn clean && NODE_ENV=production yarn build && yarn build:terser && yarn assets:optimize && yarn zip:create && yarn run zip:adv && yarn zip:measure",
+    "deploy": "yarn zip && gh-pages -d dist/",
+    "clean": "rm -rf dist"
   },
   "author": "Drew Petersen <senofpeter@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "//browserslist": "Just to prevent parcel from causing babel to transpile anything and injecting regenerator runtime. Typescript already handles this.",
+  "browserslist": [
+    "chrome 75"
+  ]
 }
