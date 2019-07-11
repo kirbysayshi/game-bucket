@@ -5,9 +5,9 @@ Common game utilities + rollup config, suitable for a small game competition. Li
 
 Includes:
 
-- [Component Entity System](lib/ces.js)
-- [Stable Game Loop with interpolation and panic modes](lib/loop.js)
-- [Scheduling, for game-time dependent time events](lib/time.js)
+- [Component Entity System](src/ces.js)
+- [Stable Game Loop with interpolation and panic modes](src/loop.js)
+- [Scheduling, for game-time dependent time events](src/time.js)
 - JS13K-compatible zip creation + notice of how close you are to the limit: `npm run zip`
 - Rollup, so you still get to use modules and separate files.
 - More? You should make a PR!

@@ -1,12 +1,12 @@
 import {
   default as Ces,
   systemPropReqs
-} from './lib/ces';
+} from './src/ces';
 import {
   schedule,
   tick,
-} from './lib/time';
-import Loop from './lib/loop';
+} from './src/time';
+import Loop from './src/loop';
 
 import accelerate from 'pocket-physics/accelerate2d';
 import inertia from 'pocket-physics/inertia2d';
