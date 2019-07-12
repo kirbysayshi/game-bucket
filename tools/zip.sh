@@ -33,4 +33,4 @@ fi;
 advzip -z -4 -i 60 dist/game.zip
 
 # Measure the zip!
-echo $(echo \"13312 - $(wc -c < dist/game.zip)\" | bc) bytes remain
+echo $(echo "13312 - $(wc -c < dist/game.zip)" | bc) bytes remain
