@@ -20,7 +20,6 @@
     "@babel/preset-typescript": "^7.3.3",
     "gh-pages": "^2.0.1",
     "http-server": "^0.9.0",
-    "prepublish": "^0.12.5",
     "rollup": "^1.16.7",
     "rollup-plugin-babel": "^4.3.3",
     "rollup-plugin-commonjs": "^10.0.1",
@@ -33,24 +32,16 @@
     "typescript": "^3.5.3"
   },
   "scripts": {
-    "prepublishOnly": "prepublish --entry-node src/index.js",
-    "type-check": "tsc --noEmit",
+    "types": "tsc --noEmit",
     "build": "rollup -c",
-    "serve": "http-server dist/",
-    "build:terser": "terser dist/bundle.js --compress --mangle -o dist/bundle.min.js && mv -f dist/bundle.min.js dist/bundle.js",
-    "terser:view": "terser dist/bundle.js --compress --mangle --beautify",
-    "assets:simplify-texture-packer-json": "node tools/shrink-texture-packer-json.js ./assets/sprites.json ./assets/sprites.json",
-    "assets:optimize": "find dist/ -iname '*.png' -exec ./tools/tinypng.sh {} {} \\;",
-    "zip:adv": "./tools/advzip.sh && advzip -z -4 -i 60 dist/game.zip",
-    "zip:create": "pushd dist/ && zip -X -r game.zip index.html *.png *.svg *.bmp *.js && popd",
-    "zip:measure": "echo $(echo \"13312 - $(wc -c < dist/game.zip)\" | bc) bytes remain",
-    "zip": "yarn clean && NODE_ENV=production yarn build && yarn build:terser && yarn assets:optimize && yarn zip:create && yarn run zip:adv && yarn zip:measure",
+    "start": "./tools/start.sh",
+    "zip": "./tools/zip.sh",
     "deploy": "yarn zip && gh-pages -d dist/",
     "clean": "rm -rf dist"
   },
   "author": "Drew Petersen <senofpeter@gmail.com>",
   "license": "MIT",
-  "//browserslist": "Just to prevent parcel from causing babel to transpile anything and injecting regenerator runtime. Typescript already handles this.",
+  "//browserslist": "Prevent babel from over-transpiling anything",
   "browserslist": [
     "chrome 75"
   ]

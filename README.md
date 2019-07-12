@@ -1,7 +1,7 @@
 game-bucket
 ===========
 
-Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)!
+Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)! In TypeScript!
 
 Includes:
 
@@ -19,27 +19,23 @@ Usage
 
 Fork this repo, then add / change code in src/index.js as you see fit! There are dependencies included, but you can remove those. Rollup ensures that only code you `import` is included!
 
-- Static files can be configured for copying in [rollup.config.js](./rollup.config.js). Default is just `index.html`
+- Static files can be configured for copying in [rollup.config.js](./rollup.config.js). Default is just [`src/index.html`](src/index.html)
 - Static files that are `import`ed are automatically copied into the `dist/` folder by rollup.
 - PNG/ZIP optimizations are handled by scripts in the [tools](/tools) directory. PNGs are handled via tinypng.com, which requires an API key in a file named `.tinypngapi`.
 
-### `npm run zip`
+### `yarn start`
 
-How close are you to the limit? Compiles in production mode, and creates a zip suitable for JS13K!
+Run type checking, rollup, and a local http server in watch mode.
 
-### `npm run build`
+### `yarn zip`
 
-Build the `bundle.js`. Use `NODE_ENV=production npm run build` to remove debug / runtime checks (similar to how [React does it](https://facebook.github.io/react/downloads.html#npm)).
+How close are you to the limit? Compiles in production mode, and creates a zip suitable for JS13K in `/dist`!
 
-### `npm run watch`
+### `yarn terser dist/bundle.js --compress --mangle --beautify`
 
-Rebuild quickly for development mode!
+This is a debug tool.
 
-TODO: other steps are now needed.
-
-### `npm run terser:view`
-
-See what the compiled JS will look like, to make sure rollup is treeshaking / hoisting as expected and that dead code is being eliminated. Requires `bundle.js` to exist.
+See what the compiled JS will look like, to make sure rollup is treeshaking / hoisting as expected and that dead code is being eliminated. `yarn build` will create a `dist/bundle.js` to use in this command.
 
 LICENSE
 -------
