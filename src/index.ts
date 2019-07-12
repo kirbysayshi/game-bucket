@@ -1,91 +1,107 @@
-import {
-  default as Ces,
-  systemPropReqs
-} from './ces';
-import {
-  schedule,
-  tick,
-} from './time';
-import Loop from './loop';
+import ScienceHalt from "science-halt";
+import accelerate from "pocket-physics/accelerate2d";
+import inertia from "pocket-physics/inertia2d";
 
-import accelerate from 'pocket-physics/accelerate2d';
-import inertia from 'pocket-physics/inertia2d';
+import { CES } from "./ces";
+import { schedule, tick } from "./time";
+import { Loop } from "./loop";
 
-import TestPng from '../assets/00 - Fool.png';
+import TestPng from "../assets/00 - Fool.png";
 console.log(TestPng);
 
-const ces = new Ces();
-const {
-  newEntity: Entity,
-  newSystem: System,
-  destroyEntity,
-} = ces;
+type MovementCmp = {
+  k: "v-movement";
+  cpos: { x: number; y: number };
+  ppos: { x: number; y: number };
+  acel: { x: number; y: number };
+};
 
-// This is an "entity", aka a bag of data, with a special array named `tags`.
-// These tags mark an entity as processable by a system that has matching tags.
-// The system will only invoke its routine if an entity or entities has every
-// tag the system requires.
-const e1 = Entity({
-  tags: ['phys-no-col', 'draw-console'],
-  cpos: { x: 0, y: 0 },
-  ppos: { x: 0, y: 0 },
-  acel: { x: 10, y: 0 },
+type DrawConsoleCmp = {
+  k: "draw-console";
+};
+
+type Component = MovementCmp | DrawConsoleCmp;
+
+// A component=entity-system(s) is a pattern for managing the lifecycles and
+// structures of differently structured data. It can be thought of as a
+// document database. Each entity (document) has a numeric id. Specific
+// fields and combinations of fields across the entire Store can be queried
+// by `select`ing those fields, as seen below.
+const ces = new CES<Component>();
+
+// An entity is just a numeric ID with associated "tagged" data denoted by
+// property 'k'. The unique names give to 'k' allow us to lookup that data
+// and modify it.
+const e1 = ces.entity([
+  {
+    k: "v-movement",
+    cpos: { x: 0, y: 0 },
+    ppos: { x: 0, y: 0 },
+    acel: { x: 10, y: 0 }
+  },
+  { k: "draw-console" }
+]);
+
+// A system of an entity-component-system framework is simply a function that
+// is repeatedly called. We separate them into two types based on how often
+// they are invoked: every frame or once every update step (10fps by default).
+const drawStepSystems: ((ces: CES<Component>, interp: number) => void)[] = [];
+const updateStepSystems: ((ces: CES<Component>, dt: number) => void)[] = [];
+
+// Physics "system", updated at 10fps
+updateStepSystems.push(function(ces: CES<Component>, dt: number) {
+  const entities = ces.select(["v-movement"]);
+  entities.forEach(e => {
+    const cmp = ces.data(e, "v-movement");
+    accelerate(cmp, dt);
+    inertia(cmp);
+  });
 });
 
-const physicsSystem = System((entities, dt) => {
-  // entities is passed in at call time from within.
-  // dt comes from calling the system manually below.
+// Draw "system" updated at 60fps
+drawStepSystems.push(function(ces: CES<Component>, interp: number) {
+  const entities = ces.select(["v-movement", "draw-console"]);
   entities.forEach(e => {
-    // this will be removed during the build due to dead-code elimination.
-    // Having this check will hopefully prevent typos during dev?
-    if (process.env.NODE_ENV !== 'production') { systemPropReqs(e, 'cpos', 'ppos', 'acel'); }
-    accelerate(e, dt);
-    inertia(e);
-  })
-}, 'phys-no-col');
-
-// this should be made more specific, such as "circleDraw" or "particleDraw" and should
-// receive some sort of drawing context as param.
-const drawSystem = System((entities, interp) => {
-  // entities is passed in at call time from within.
-  // interp comes from manually calling the system below.
-  entities.forEach(e => {
-    if (process.env.NODE_ENV !== 'production') { systemPropReqs(e, 'cpos', 'ppos'); }
-    console.log('x', e.ppos.x + (e.cpos.x - e.ppos.x) * interp);
-    console.log('y', e.ppos.y + (e.cpos.y - e.ppos.y) * interp);
-  })
-}, 'draw-console');
+    const cmp = ces.data(e, "v-movement");
+    console.log("x", cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp);
+    console.log("y", cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp);
+  });
+});
 
 
 // schedule a callback for a specified "best effort" time in the future.
 schedule((scheduledDelay, actualDelay) => {
   // destroy the entity after 3500 ms
-  // TODO: may need a "destroyEntityXSystem" that deallocs any props on the
-  // entity.
-  destroyEntity(e1);
-  console.log(e1);
+  ces.destroy(e1);
+  console.log("marked entity for destruction", e1);
 }, 3500);
 
 const { stop } = Loop({
   drawTime: 1000 / 60,
   updateTime: 1000 / 30,
-  update: (dt) => {
+  update: dt => {
+    // Increment scheduled actions.
     tick(dt);
-    physicsSystem(dt);
+
+    // Update all the "update" systems
+    updateStepSystems.forEach(s => s(ces, dt));
+
+    // Actualy destroy any entities that were marked for destruction. We do
+    // this at the end of the update step to avoid race conditions between
+    // systems.
+    ces.flushDestruction();
   },
-  draw: (interp) => {
-    drawSystem(interp);
+  draw: interp => {
+    // `interp` is a value between 0 and 1 that determines how close we are
+    // to the next `update` frame. This allows for smooth animation, even
+    // though the actual root values change less frequently than we draw.
+    drawStepSystems.forEach(s => s(ces, interp));
   },
-  onPanic: () => console.log('panic!'),
-  onFPS: (fps) => console.log(fps, 'fps'),
+  onPanic: () => console.log("panic!"),
+  onFPS: fps => console.log(fps, "fps")
 });
 
-// Turn this into dead-code during production
-if (process.env.NODE_ENV !== 'production') {
-  window.addEventListener('keydown', e => {
-    if (e.which === 27) {
-      stop();
-      console.log('HALT IN THE NAME OF SCIENCE');
-    }
-  }, false);
+// Turn into dead-code during minification via NODE_ENV check.
+if (process.env.NODE_ENV !== "production") {
+  ScienceHalt(() => stop());
 }

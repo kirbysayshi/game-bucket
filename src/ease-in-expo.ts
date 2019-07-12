@@ -2,6 +2,6 @@
 // b: begInnIng value,
 // c: total change In value,
 // d: total duration of easing (ticks, seconds, whatever)
-export function easeInCirc (t, b, c, d) {
-  return -c * (Math.sqrt(1 - (t/=d)*t) - 1) + b;
+export function easeInExpo (t: number, b: number, c: number, d: number) {
+  return (t==0) ? b : c * Math.pow(2, 10 * (t/d - 1)) + b;
 }

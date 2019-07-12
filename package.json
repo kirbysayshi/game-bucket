@@ -32,7 +32,7 @@
     "typescript": "^3.5.3"
   },
   "scripts": {
-    "types": "tsc --noEmit",
+    "types": "tsc",
     "build": "rollup -c",
     "start": "./tools/start.sh",
     "zip": "./tools/zip.sh",

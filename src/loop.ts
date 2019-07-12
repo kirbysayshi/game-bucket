@@ -6,7 +6,19 @@
 // computers or browsers. In one it might be way easier, since it could run
 // much slower! This helps to prevent that.
 
-export default ({
+type InterpolationFactor = number;
+
+type LoopOptions = {
+  drawTime: Ms;
+  updateTime: Ms;
+  draw: (interp: InterpolationFactor) => void;
+  update: (dt: Ms) => void;
+  panicAt?: Ms;
+  onPanic?: () => void;
+  onFPS?: (fps: number) => void;
+}
+
+export const Loop = ({
   drawTime,
   updateTime,
   draw,
@@ -14,7 +26,7 @@ export default ({
   panicAt = 10,
   onPanic = () => {},
   onFPS = () => {},
-}) => {
+}: LoopOptions) => {
 
   const perf = window.performance;
 
@@ -24,7 +36,7 @@ export default ({
   const rAF = window.requestAnimationFrame.bind(window)
 
   let accumulator = 0;
-  let raf = null;
+  let raf: null | number = null;
   let lastLoop = pnow();
   let lastFPS = pnow();
   let framesThisSecond = 0;

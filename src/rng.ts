@@ -8,7 +8,7 @@ export function tetris () {
   }
 }
 
-export function rngFloat (rng) {
+export function rngFloat (rng: ReturnType<typeof tetris>) {
   return () => {
     const v = (rng() - 2) / (65534 - 2);
     return v;

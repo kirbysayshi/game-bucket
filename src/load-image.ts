@@ -1,4 +1,4 @@
-export default (path) => {
+export function loadImage (path: string) {
   return new Promise((resolve, reject) => {
     const i = new Image();
     i.onload = () => resolve(i);
