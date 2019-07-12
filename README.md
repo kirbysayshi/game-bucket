@@ -31,6 +31,10 @@ Run type checking, rollup, and a local http server in watch mode.
 
 How close are you to the limit? Compiles in production mode, and creates a zip suitable for JS13K in `/dist`!
 
+### `yarn deploy`
+
+Build a zip, then deploy the `dist` folder to `gh-pages` seamlessly! Best for testing your game on multiple devices.
+
 ### `yarn terser dist/bundle.js --compress --mangle --beautify`
 
 This is a debug tool.
