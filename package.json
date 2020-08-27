@@ -1,6 +1,6 @@
 {
   "name": "game-bucket",
-  "version": "5.0.2",
+  "version": "6.0.0",
   "description": "Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)!",
   "files": [
     "dist"
