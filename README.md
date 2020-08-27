@@ -35,6 +35,10 @@ How close are you to the limit? Compiles in production mode, and creates a zip s
 
 Build a zip, then deploy the `dist` folder to `gh-pages` seamlessly! Best for testing your game on multiple devices.
 
+### `yarn http-server dist/`
+
+Done automatically by `yarn start`, but perhaps you just ran `yarn zip` and want to run the actual compiled/mangled code.
+
 ### `yarn terser dist/bundle.js --compress --mangle --beautify`
 
 This is a debug tool.

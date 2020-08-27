@@ -12,8 +12,34 @@ yarn clean
 NODE_ENV=production yarn build
 
 # compress JS
-terser dist/bundle.js --compress --mangle -o dist/bundle.min.js
+terser dist/bundle.js --compress --mangle --mangle-props -o dist/bundle.min.js
 mv -f dist/bundle.min.js dist/bundle.js
+
+# replace string constants with shorter, yet unique, values
+NODE_SCRIPT=$(cat <<-END
+  var txt = fs.readFileSync("/dev/stdin","utf8");
+  const replaced = txt
+    .replace(/"v-movement"/g, "\"mv\"")
+    .replace(/"draw-console"/g, "\"dc\"")
+
+  fs.writeFileSync("dist/bundle.js", replaced);
+END
+)
+<dist/bundle.js node -e "$NODE_SCRIPT"
+
+# minify HTML
+html-minifier \
+  --collapse-whitespace \
+  --remove-comments \
+  --remove-optional-tags \
+  --remove-redundant-attributes \
+  --remove-script-type-attributes \
+  --remove-tag-whitespace \
+  --use-short-doctype \
+  --minify-css true \
+  --minify-js true \
+  dist/index.html -o dist/index.min.html
+mv -f dist/index.min.html dist/index.html
 
 # Optimize assets copied by rollup
 find dist/ -iname '*.png' -exec ./tools/tinypng.sh {} {} \;

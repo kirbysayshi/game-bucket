@@ -1,6 +1,5 @@
 import ScienceHalt from "science-halt";
-import accelerate from "pocket-physics/accelerate2d";
-import inertia from "pocket-physics/inertia2d";
+import { accelerate, inertia } from "pocket-physics";
 
 import { CES } from "./ces";
 import { schedule, tick } from "./time";
