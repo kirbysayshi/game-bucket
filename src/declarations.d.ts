@@ -1,20 +1,21 @@
-declare module '*.png';
+declare module "*.png";
+declare module "*.svg";
 
-declare module 'science-halt' {
-  function scienceHalt (onhalt: () => void, opt_msg?: string, opt_keycode?: number): void;
+declare module "science-halt" {
+  function scienceHalt(
+    onhalt: () => void,
+    opt_msg?: string,
+    opt_keycode?: number
+  ): void;
   export = scienceHalt;
 }
 
 type Ms = number;
 
-declare module 'pocket-physics/accelerate2d' {
-  type V2 = { x: number; y: number; };
-  function accelerate2d (cmp: { cpos: V2, acel: V2 }, dt: number): void;
-  export = accelerate2d;
-}
+type Mutable<T> = {
+  -readonly [P in keyof T]: T[P];
+};
 
-declare module 'pocket-physics/inertia2d' {
-  type V2 = { x: number; y: number; };
-  function inertia2d (cmp: { cpos: V2, ppos: V2 }): void;
-  export = inertia2d;
-}
+// Surely there must be a better way...
+type WriteableProperty<T, P extends keyof T> = Pick<T, Exclude<keyof T, P>> &
+  Mutable<Pick<T, P>>;

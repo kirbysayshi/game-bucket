@@ -40,9 +40,10 @@ export const Loop = ({
   let lastLoop = pnow();
   let lastFPS = pnow();
   let framesThisSecond = 0;
-  let fps = 0;
+  let fps = 60;
 
-  (function accumulate (now) {
+  (function accumulate () {
+    const now = pnow();
     raf = rAF(accumulate);
 
     const dt = now - lastLoop;
@@ -78,7 +79,7 @@ export const Loop = ({
       onFPS(fps);
     }
 
-  }(pnow()));
+  }());
 
   const stop = () => {
     if (raf) cancelAnimationFrame(raf);

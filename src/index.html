@@ -1,46 +1,64 @@
 <!DOCTYPE html>
-  <html>
+<html>
   <head>
-  <meta charset=UTF-8>
-  <title>Game Bucket</title>
-  <style>
-  html,body{
-    margin:0;
-    padding:0;
-    overflow:hidden;
-    background-color:#000;
-    position:relative;
-    height: 100%;
-  }
-  body > div { position: relative; }
-  canvas,img{
-    image-rendering: -moz-crisp-edges;
-    image-rendering: -webkit-crisp-edges;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    -webkit-touch-callout: none !important;
-    -webkit-user-select:none !important;
-    -o-user-select: none;
-    user-select: none;
-  }
-  #ipt {
-    display: none;
-    position: absolute;
-    bottom: 0;
-    opacity: 0.4;
-    height: 20%;
-    width: 100%;
-    text-align: center;
-  }
-  #ipt img {
-    display: inline-block;
-    padding: 2vw;
-    width: 24vw;
-  }
-  </style>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"/>
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta charset="UTF-8" />
+    <title>Game Bucket</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        /* background-color:#000; */
+        background-color: #cc66cc;
+        position: relative;
+        height: 100%;
+        font-family: "Courier New", Courier, monospace;
+        color: white;
+      }
+      canvas,
+      img {
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -o-user-select: none;
+        user-select: none;
+      }
+      #r {
+        position: relative;
+        margin: 0 auto;
+      }
+      #u {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        /* bottom: 0; */
+      }
+      .modal {
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.8);
+        overflow: hidden;
+        padding: 10vw;
+      }
+    </style>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
   </head>
-  <body><div><canvas id=c></canvas></div><script src=bundle.js></script></body>
+  <body>
+    <div id="r">
+      <canvas id="c"></canvas>
+      <div id="u"></div>
+    </div>
+    <script src="bundle.js"></script>
+  </body>
 </html>
