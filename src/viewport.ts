@@ -1,13 +1,13 @@
+import { v2, Vector2 } from 'pocket-physics';
+import { DPRCanvas, makeDPRCanvas } from './canvas';
 import {
-  useCES,
+  EntityDefSelector,
   MovementCmp,
   SpringConstraintCmp,
-  EntityDefSelector
-} from "./components";
-import { DPRCanvas, makeDPRCanvas } from "./canvas";
-import { usePrimaryCanvas, useRootElement } from "./dom";
-import { Vector2, Integratable, v2 } from "pocket-physics";
-import { AssuredEntityId } from "./ces";
+  useCES,
+} from './components';
+import { usePrimaryCanvas, useRootElement } from './dom';
+import { assertDefinedFatal } from './utils';
 
 type Pixels = number & { _isPixels: true };
 
@@ -21,7 +21,7 @@ export type ViewportUnitVector2 = {
 };
 
 export type ViewportCmp = {
-  k: "viewport";
+  k: 'viewport';
   ratio: number;
   width: Pixels;
   height: Pixels;
@@ -34,43 +34,39 @@ export type ViewportCmp = {
 
 export type ViewportDef = [ViewportCmp, SpringConstraintCmp];
 export const viewportSelector: EntityDefSelector<ViewportDef> = [
-  "viewport",
-  "spring-constraint"
+  'viewport',
+  'spring-constraint',
 ] as const;
 
 // TODO: this should probably be a "camera"
 // TODO: probably want a "do not shake" property. UI Shaking might be weird.
-export const toPixelUnits = (n: ViewportUnits, axis: "x" | "y" = "x") => {
+export const toPixelUnits = (n: ViewportUnits, axis: 'x' | 'y' = 'x') => {
   const ces = useCES();
   const id = ces.selectFirst(viewportSelector);
-  if (process.env.NODE_ENV !== "production") {
-    if (!id)
-      throw new Error(
-        "tried to compute pixel units without a viewport defined!"
-      );
-  }
+  const vp = ces.data(id, 'viewport');
+  assertDefinedFatal(vp, 'no viewport');
 
-  const vp = ces.data(id!, "viewport");
   // Super hack! Assume constraint.v1 is the un-anchored point
-  const shakeConstraint = ces.data(id!, "spring-constraint");
-  const shake = ces.data(shakeConstraint.v1, "v-movement");
+  const shakeConstraint = ces.data(id, 'spring-constraint');
+  const shake = ces.data(shakeConstraint?.v1, 'v-movement');
+  assertDefinedFatal(shake, 'no shake');
   const x = shake.cpos.x;
   const y = shake.cpos.y;
   const withShakeX = (n + x) / vp.vpWidth;
   const withShakeY = (n + y) / vp.vpHeight;
   const cvs = vp.dprCanvas;
   const pixels =
-    axis === "x" ? cvs.width * withShakeX : cvs.height * withShakeY;
+    axis === 'x' ? cvs.width * withShakeX : cvs.height * withShakeY;
   return Math.floor(pixels);
 };
 
 export const toViewportUnits = (n: number): ViewportUnits => {
   const ces = useCES();
-  const vp = ces.selectFirstData("viewport");
-  if (process.env.NODE_ENV !== "production") {
+  const vp = ces.selectFirstData('viewport');
+  if (process.env.NODE_ENV !== 'production') {
     if (!vp)
       throw new Error(
-        "tried to compute pixel units without a viewport defined!"
+        'tried to compute pixel units without a viewport defined!'
       );
   }
   const units = (n / vp!.dprCanvas.width) * 100;
@@ -87,12 +83,14 @@ export function drawAsset(
   center = false
 ) {
   const ces = useCES();
-  const vp = ces.selectFirstData("viewport");
+  const vp = ces.selectFirstData('viewport');
 
-  const x = toPixelUnits((ppos.x +
-    interp * (cpos.x - ppos.x)) as ViewportUnits);
-  const y = toPixelUnits((ppos.y +
-    interp * (cpos.y - ppos.y)) as ViewportUnits);
+  const x = toPixelUnits(
+    (ppos.x + interp * (cpos.x - ppos.x)) as ViewportUnits
+  );
+  const y = toPixelUnits(
+    (ppos.y + interp * (cpos.y - ppos.y)) as ViewportUnits
+  );
 
   const pxWidth = toPixelUnits(width);
   const pxHeight = toPixelUnits(height);
@@ -128,13 +126,13 @@ export function deriveViewportCmp(): ViewportCmp {
       : window.innerHeight;
 
   return {
-    k: "viewport",
+    k: 'viewport',
     ratio,
     width: width as Pixels,
     height: height as Pixels,
     vpWidth: 100 as ViewportUnits<100>,
     vpHeight: (100 / 0.6) as ViewportUnits,
-    dprCanvas: makeDPRCanvas(width, height, usePrimaryCanvas())
+    dprCanvas: makeDPRCanvas(width, height, usePrimaryCanvas()),
   };
 }
 
@@ -142,47 +140,47 @@ export function computeWindowResize() {
   const cmp = deriveViewportCmp();
   const ces = useCES();
 
-  // On resize, destroy existing component and depdendent components.
-  const existingId = ces.selectFirst(viewportSelector);
-  if (existingId) {
-    const constraint = ces.data(existingId, "spring-constraint");
-    ces.destroy(constraint.v1);
-    ces.destroy(constraint.v2);
+  {
+    // On resize, destroy existing component and depdendent components.
+    const existingId = ces.selectFirst(viewportSelector);
+    const constraint = ces.data(existingId, 'spring-constraint');
+    ces.destroy(constraint?.v1);
+    ces.destroy(constraint?.v2);
     ces.destroy(existingId);
   }
 
   const anchor: MovementCmp = {
-    k: "v-movement",
+    k: 'v-movement',
     cpos: v2() as ViewportUnitVector2,
     ppos: v2() as ViewportUnitVector2,
-    acel: v2() as ViewportUnitVector2
+    acel: v2() as ViewportUnitVector2,
   };
 
   const shake: MovementCmp = {
-    k: "v-movement",
+    k: 'v-movement',
     cpos: v2() as ViewportUnitVector2,
     ppos: v2() as ViewportUnitVector2,
-    acel: v2() as ViewportUnitVector2
+    acel: v2() as ViewportUnitVector2,
   };
 
   const anchorId = ces.entity([anchor]);
   const shakeId = ces.entity([shake]);
 
   const constraint: SpringConstraintCmp = {
-    k: "spring-constraint",
+    k: 'spring-constraint',
     v1: shakeId,
     v1Mass: 10,
     v2: anchorId,
     v2Mass: 0,
     goal: 0.1,
-    stiffness: 0.2
+    stiffness: 0.2,
   };
 
   const root = useRootElement();
-  root.style.width = cmp.width + "px";
+  root.style.width = cmp.width + 'px';
 
   const def: ViewportDef = [cmp, constraint];
   ces.entity(def);
 }
 
-window.addEventListener("resize", computeWindowResize);
+window.addEventListener('resize', computeWindowResize);

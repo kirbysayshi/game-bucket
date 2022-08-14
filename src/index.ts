@@ -1,29 +1,28 @@
-import ScienceHalt from "science-halt";
-import { accelerate, inertia, v2 } from "pocket-physics";
-
-import { schedule, tick } from "./time";
-import { Loop } from "./loop";
-
-import TestPng from "../assets/00 - Fool.png";
+import { accelerate, inertia, v2 } from 'pocket-physics';
+import ScienceHalt from 'science-halt';
+import TestPng from '../assets/00 - Fool.png';
+import { AssetMap } from './asset-map';
 import {
-  useCES,
   DrawStepSystem,
-  UpdateStepSystem,
   DrawTimeHz,
+  UpdateStepSystem,
   UpdateTimeHz,
-} from "./components";
+  useCES,
+} from './components';
+import { initDragListeners } from './drag';
+import { createGameLoop } from './loop';
+import { schedule, tick } from './time';
 import {
-  ViewportUnitVector2,
-  drawAsset,
-  ViewportUnits,
   computeWindowResize,
-} from "./viewport";
-import { useAsset, loadAssets } from "./asset-map";
-import { initDragListeners, dragStateSelector } from "./drag";
+  drawAsset,
+  ViewportUnitVector2,
+} from './viewport';
+
 console.log(TestPng);
 
 async function boot() {
-  await loadAssets();
+  const assets = new AssetMap();
+  await assets.preload();
 
   // A component=entity-system(s) is a pattern for managing the lifecycles and
   // structures of differently structured data. It can be thought of as a
@@ -43,12 +42,12 @@ async function boot() {
   // and modify it.
   const e1 = ces.entity([
     {
-      k: "v-movement",
+      k: 'v-movement',
       cpos: { x: 0, y: 0 } as ViewportUnitVector2,
       ppos: { x: 0, y: 0 } as ViewportUnitVector2,
       acel: { x: 10, y: 0 } as ViewportUnitVector2,
     },
-    { k: "draw-console" },
+    { k: 'draw-console' },
   ]);
 
   // A system of an entity-component-system framework is simply a function that
@@ -59,9 +58,10 @@ async function boot() {
 
   // Physics "system", updated at 10fps
   updateStepSystems.push(function (ces, dt) {
-    const entities = ces.select(["v-movement"]);
+    const entities = ces.select(['v-movement']);
     entities.forEach((e) => {
-      const cmp = ces.data(e, "v-movement");
+      const cmp = ces.data(e, 'v-movement');
+      if (!cmp) return;
       accelerate(cmp, dt);
       inertia(cmp);
     });
@@ -69,7 +69,7 @@ async function boot() {
 
   // clear the screen at 60fps
   drawStepSystems.push((ces) => {
-    const screen = ces.selectFirstData("viewport")!;
+    const screen = ces.selectFirstData('viewport')!;
     screen.dprCanvas.ctx.clearRect(
       0,
       0,
@@ -80,8 +80,8 @@ async function boot() {
 
   // Draw "system" updated at 60fps
   drawStepSystems.push(function (ces, interp) {
-    const bg = useAsset("test");
-    const screen = ces.selectFirstData("viewport")!;
+    const bg = assets.getImage('test');
+    const screen = ces.selectFirstData('viewport')!;
     drawAsset(
       bg,
       interp,
@@ -94,21 +94,22 @@ async function boot() {
 
   // "draw" the position of this object to the console at 60fps
   drawStepSystems.push(function (ces, interp) {
-    const entities = ces.select(["v-movement", "draw-console"]);
+    const entities = ces.select(['v-movement', 'draw-console']);
     entities.forEach((e) => {
-      const cmp = ces.data(e, "v-movement");
-      console.log("x", cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp);
-      console.log("y", cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp);
+      const cmp = ces.data(e, 'v-movement');
+      if (!cmp) return;
+      console.log('x', cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp);
+      console.log('y', cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp);
     });
   });
 
   // fps entity
-  ces.entity([{ k: "fps", v: 60 }]);
+  ces.entity([{ k: 'fps', v: 60 }]);
 
   // Draw the FPS as text on the canvas
   drawStepSystems.push((ces) => {
-    const screen = ces.selectFirstData("viewport")!;
-    const fpsData = ces.selectFirstData("fps")!;
+    const screen = ces.selectFirstData('viewport')!;
+    const fpsData = ces.selectFirstData('fps')!;
     const text = fpsData.v.toFixed(2);
     // How many lines of text do we want to be able to display on canvas?
     // Ok, use that as the font size. This assumes the canvas size _ratio_ is fixed but
@@ -128,7 +129,7 @@ async function boot() {
     // canvas! We could change the baseline, but then text blocks / paragraphs would be
     // hard to read.
     const height = textSize * lineHeight - textSize;
-    screen.dprCanvas.ctx.fillStyle = "rgba(255,255,0,1)";
+    screen.dprCanvas.ctx.fillStyle = 'rgba(255,255,0,1)';
     screen.dprCanvas.ctx.fillText(
       text,
       screen.width - width,
@@ -140,10 +141,10 @@ async function boot() {
   schedule((scheduledDelay, actualDelay) => {
     // destroy the entity after 3500 ms
     ces.destroy(e1);
-    console.log("marked entity for destruction", e1);
+    console.log('marked entity for destruction', e1);
   }, 3500);
 
-  const { stop } = Loop({
+  const { stop } = createGameLoop({
     drawTime: 1000 / DrawTimeHz,
     updateTime: 1000 / UpdateTimeHz,
     update: (dt) => {
@@ -169,22 +170,21 @@ async function boot() {
   });
 
   // Turn into dead-code during minification via NODE_ENV check.
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== 'production') {
     ScienceHalt(() => stop());
   }
 }
 
 function onPanic() {
-  if (process.env.NODE_ENV !== "production") {
-    console.log("panic!");
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('panic!');
   }
 }
 
 function onFPS(fps: number) {
   const ces = useCES();
-  const data = ces.selectFirstData("fps")!;
+  const data = ces.selectFirstData('fps')!;
   data.v = fps;
 }
 
 boot();
-

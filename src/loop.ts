@@ -6,71 +6,81 @@
 // computers or browsers. In one it might be way easier, since it could run
 // much slower! This helps to prevent that.
 
-type InterpolationFactor = number;
+export type Ms = number;
+export type InterpolationFactor = number;
 
-type LoopOptions = {
+export type LoopOptions = {
   drawTime: Ms;
   updateTime: Ms;
-  draw: (interp: InterpolationFactor) => void;
+  draw: (interp: InterpolationFactor, dt: Ms) => void;
   update: (dt: Ms) => void;
   panicAt?: Ms;
   onPanic?: () => void;
   onFPS?: (fps: number) => void;
-}
+  accumulatorTick?: (accumulate: () => void) => number | null;
+  cancelAccumulatorTick?: (handle: number) => void;
+};
 
-export const Loop = ({
+const noop = () => {
+  return void 0;
+};
+
+export const createGameLoop = ({
   drawTime,
   updateTime,
   draw,
   update,
   panicAt = 10,
-  onPanic = () => {},
-  onFPS = () => {},
-}: LoopOptions) => {
-
-  const perf = window.performance;
+  onPanic = noop,
+  onFPS = noop,
+  accumulatorTick = window.requestAnimationFrame.bind(window),
+  cancelAccumulatorTick = window.cancelAnimationFrame,
+}: LoopOptions): { stop: () => void } => {
+  const perf = performance;
 
   const drawMs = drawTime;
   const updateMs = updateTime;
   const pnow = perf.now.bind(perf);
-  const rAF = window.requestAnimationFrame.bind(window)
+  const rAF = accumulatorTick;
 
-  let accumulator = 0;
+  let updateAccumulator = 0;
+  let drawAccumulator = 0;
   let raf: null | number = null;
   let lastLoop = pnow();
   let lastFPS = pnow();
   let framesThisSecond = 0;
   let fps = 60;
 
-  (function accumulate () {
+  function accumulate() {
     const now = pnow();
     raf = rAF(accumulate);
 
     const dt = now - lastLoop;
-    accumulator += dt;
+    updateAccumulator += dt;
+    drawAccumulator += dt;
     lastLoop = now;
 
-    let shouldDraw = accumulator - drawMs >= 0;
-    let step = Math.floor(accumulator / updateMs);
+    const shouldDraw = drawAccumulator - drawMs >= 0;
+    let step = Math.floor(updateAccumulator / updateMs);
 
     if (step >= panicAt) {
-      accumulator = 0;
+      updateAccumulator = 0;
       lastLoop = pnow();
       onPanic();
       return;
     }
 
     while (step-- > 0) {
-      accumulator -= updateMs;
+      updateAccumulator -= updateMs;
       update(updateMs);
     }
 
     if (shouldDraw) {
-      // pass interpolation factor for smooth animations
-      draw(accumulator / drawMs);
+      drawAccumulator -= drawMs;
+      // pass update-based interpolation factor for smooth animations
+      draw(1 - (updateMs - updateAccumulator) / updateMs, drawMs);
+      framesThisSecond += 1;
     }
-
-    framesThisSecond += 1;
 
     if (lastFPS + 1000 <= now) {
       fps = 0.25 * framesThisSecond + 0.75 * fps;
@@ -78,14 +88,15 @@ export const Loop = ({
       lastFPS = now;
       onFPS(fps);
     }
+  }
 
-  }());
+  accumulate();
 
   const stop = () => {
-    if (raf) cancelAnimationFrame(raf);
-  }
+    if (raf) cancelAccumulatorTick(raf);
+  };
 
   return {
     stop,
-  }
-}
+  };
+};

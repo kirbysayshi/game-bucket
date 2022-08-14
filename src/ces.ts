@@ -122,7 +122,8 @@ export class CES3<ED extends EntityData> {
     return this.ids as readonly (EntityId | undefined)[];
   }
 
-  destroy(eid: EntityId): void {
+  destroy(eid: EntityId | undefined): void {
+    if (eid === undefined) return;
     eid.destroyed = true;
     this.destroyed.add(eid.id);
   }
@@ -177,24 +178,16 @@ export class CES3<ED extends EntityData> {
     >;
   }
 
-  // There is actually no guarantee the id is still valid, so this should return optional undefined...
-
+  /**
+   * Even with an AssuredEntityId, there is actually no guarantee the id is
+   * still valid, so this returns optional undefined. A `select` could have
+   * occurred in a previous frame, or it could be an ID stashed on another
+   * entity.
+   */
   data<T extends ED, K extends T['k']>(
     eid: AssuredEntityId<T> | undefined,
     kind: K
   ) {
-    if (!eid || eid.destroyed) return;
-    const datas = this.cmpToIdArr.get(kind);
-    if (process.env.NODE_ENV !== 'production') {
-      if (!datas) throw new Error('No component datas!');
-    }
-    return datas?.[eid.id] as NarrowComponent<T, K> | undefined;
-  }
-
-  dataMaybe<T extends ED, K extends T['k']>(
-    eid: EntityId | undefined,
-    kind: K
-  ): NarrowComponent<T, K> | undefined {
     if (!eid || eid.destroyed) return;
     const datas = this.cmpToIdArr.get(kind);
     if (process.env.NODE_ENV !== 'production') {
@@ -250,7 +243,7 @@ export class CES3<ED extends EntityData> {
     return true;
   }
 
-  select<T extends ED['k']>(kinds: T[]) {
+  select<T extends ED['k']>(kinds: T[] | readonly T[]) {
     const matching = new Set<EntityId>();
 
     for (let i = 0; i < kinds.length; i++) {
@@ -278,7 +271,7 @@ export class CES3<ED extends EntityData> {
     return datas as Readonly<(NarrowComponent<ED, T> | undefined)[]>;
   }
 
-  selectFirst(kinds: ED['k'][]) {
+  selectFirst(kinds: ED['k'][] | readonly ED['k'][]) {
     const selection = this.select(kinds);
     if (selection.length === 0) return undefined;
     return selection[0];

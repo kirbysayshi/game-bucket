@@ -1,13 +1,14 @@
-import { AssuredEntityId } from "./ces";
-import { useRootElement, listen } from "./dom";
-import { v2, copy } from "pocket-physics";
+import { copy, v2 } from 'pocket-physics';
+import { AssuredEntityId } from './ces';
 import {
-  useCES,
   Component,
+  EntityDefSelector,
   MovementCmp,
-  EntityDefSelector
-} from "./components";
-import { ViewportUnitVector2, toViewportUnits } from "./viewport";
+  useCES,
+} from './components';
+import { listen, useRootElement } from './dom';
+import { assertDefinedFatal } from './utils';
+import { toViewportUnits, ViewportUnitVector2 } from './viewport';
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Touch_events/Using_Touch_Events
 // https://developers.google.com/web/fundamentals/design-and-ux/input/touch/#implement-custom-gestures
@@ -28,19 +29,19 @@ export function pointInBox(point: ViewportUnitVector2, box: Box): boolean {
 }
 
 export type PointerTargetCmp = {
-  k: "pointer-target";
+  k: 'pointer-target';
   box: Box;
 };
 
 export type DragStateCmp = {
-  k: "drag-state";
+  k: 'drag-state';
   target: AssuredEntityId<PointerTargetCmp> | null;
 };
 
 type DragStateDef = [DragStateCmp, MovementCmp];
 export const dragStateSelector: EntityDefSelector<DragStateDef> = [
-  "drag-state",
-  "v-movement"
+  'drag-state',
+  'v-movement',
 ] as const;
 
 const pointFromEvent = (ev: TouchEvent | MouseEvent): ViewportUnitVector2 => {
@@ -63,9 +64,9 @@ const pointFromEvent = (ev: TouchEvent | MouseEvent): ViewportUnitVector2 => {
 // TODO: enable plain mouse events too! Remember that mousemove events only
 // fire if the mouse is still over the element.
 
-function excludeDestroyed<T extends Component>(ids: Set<AssuredEntityId<T>>) {
+function excludeDestroyed<T extends Component>(ids: AssuredEntityId<T>[]) {
   const ces = useCES();
-  return Array.from(ids).filter(id => !ces.isDestroyed(id));
+  return ids.filter((id) => !ces.isDestroyed(id));
 }
 
 // Without exporting and calling, Rollup was excluding these listeners!
@@ -73,18 +74,18 @@ function excludeDestroyed<T extends Component>(ids: Set<AssuredEntityId<T>>) {
 // anyway but very unintuitive.
 export function initDragListeners() {
   const root = useRootElement();
-  listen(root, "touchstart", ev => {
+  listen(root, 'touchstart', (ev) => {
     let point = pointFromEvent(ev);
     const ces = useCES();
 
     // search: did we hit something touchable?
-    const targets = ces.select(["pointer-target"]);
+    const targets = ces.select(['pointer-target']);
     let found: null | AssuredEntityId<PointerTargetCmp> = null;
     let foundCenter: null | ViewportUnitVector2 = null;
-    targets.forEach(id => {
+    targets.forEach((id) => {
       if (found) return;
-      const data = ces.data(id, "pointer-target");
-      if (pointInBox(point, data.box)) {
+      const data = ces.data(id, 'pointer-target');
+      if (data && pointInBox(point, data.box)) {
         found = id;
         foundCenter = data.box.center;
       }
@@ -97,31 +98,32 @@ export function initDragListeners() {
 
     const e: DragStateDef = [
       {
-        k: "drag-state",
-        target: found
+        k: 'drag-state',
+        target: found,
       },
       {
-        k: "v-movement",
+        k: 'v-movement',
         // Use the found center so the drag target "snaps" to the touch position
         cpos: copy(v2(), foundCenter) as ViewportUnitVector2,
         ppos: copy(v2(), foundCenter) as ViewportUnitVector2,
         // cpos: copy(v2(), point) as ViewportUnitVector2,
         // ppos: copy(v2(), point) as ViewportUnitVector2,
-        acel: v2() as ViewportUnitVector2
-      }
+        acel: v2() as ViewportUnitVector2,
+      },
     ];
 
     ces.entity(e);
   });
 
-  listen(root, "touchmove", ev => {
+  listen(root, 'touchmove', (ev) => {
     const ces = useCES();
     const ids = excludeDestroyed(ces.select(dragStateSelector));
     if (ids.length === 0) return;
     ev.preventDefault();
     // update the drag state with the event position
     const point = pointFromEvent(ev);
-    const pos = ces.data(ids[0], "v-movement");
+    const pos = ces.data(ids[0], 'v-movement');
+    assertDefinedFatal(pos);
     // copying the current position to previous will create velocity!
     // we don't want that, since this is now a tracked physics object.
     // copy(pos.ppos, pos.cpos);
@@ -130,12 +132,13 @@ export function initDragListeners() {
     copy(pos.ppos, point);
   });
 
-  listen(root, "touchend", ev => {
+  listen(root, 'touchend', (ev) => {
     const ces = useCES();
     const ids = excludeDestroyed(ces.select(dragStateSelector));
     if (ids.length === 0) return;
     ev.preventDefault();
-    const data = ces.data(ids[0], "drag-state");
+    const data = ces.data(ids[0], 'drag-state');
+    assertDefinedFatal(data);
     data.target = null;
     ces.destroy(ids[0]);
   });
