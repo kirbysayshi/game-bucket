@@ -1,17 +1,21 @@
-import babel from "@rollup/plugin-babel";
-import resolve from "@rollup/plugin-node-resolve";
-import commonjs from "@rollup/plugin-commonjs";
-import replace from "@rollup/plugin-replace";
-import url from "@rollup/plugin-url";
+import babel from '@rollup/plugin-babel';
+import commonjs from '@rollup/plugin-commonjs';
+import resolve from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
+import url from '@rollup/plugin-url';
+import copy from 'rollup-plugin-copy';
+import pkg from './package.json';
 
-import copy from "rollup-plugin-copy";
+const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 
-import pkg from "./package.json";
-
-const extensions = [".js", ".jsx", ".ts", ".tsx"];
+const pluginTransformConstToLet = () => ({
+  renderChunk(chunk) {
+    return chunk.replace(/\bconst\b/g, 'let');
+  },
+});
 
 export default {
-  input: "./src/index.ts",
+  input: './src/index.ts',
   plugins: [
     resolve({ extensions }),
 
@@ -22,35 +26,37 @@ export default {
     url({
       limit: 0,
       include: [
-        "**/*.svg",
-        "**/*.png",
-        "**/*.jpg",
-        "**/*.gif",
-        "**/*.mp4",
-        "**/*.mp3",
-        "**/*.ttf",
+        '**/*.svg',
+        '**/*.png',
+        '**/*.jpg',
+        '**/*.gif',
+        '**/*.mp4',
+        '**/*.mp3',
+        '**/*.ttf',
       ],
     }),
 
     commonjs(),
 
-    babel({ extensions, babelHelpers: 'bundled', include: ["src/**/*"] }),
+    babel({ extensions, babelHelpers: 'bundled', include: ['src/**/*'] }),
 
     replace({
-      "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
 
-    copy({ targets: [{ src: "src/index.html", dest: "dist/" }] }),
+    pluginTransformConstToLet(),
+
+    copy({ targets: [{ src: 'src/index.html', dest: 'dist/' }] }),
   ],
 
   output: [
     {
-      file: "dist/bundle.js",
-      format: "iife",
+      file: 'dist/bundle.js',
+      format: 'iife',
       name: pkg.name
-        .split("-")
+        .split('-')
         .map((s) => s[0].toUpperCase() + s.substr(1))
-        .join(""),
+        .join(''),
     },
   ],
 };
