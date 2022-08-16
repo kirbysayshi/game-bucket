@@ -10,13 +10,10 @@
     "science-halt": "^0.2.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.10.5",
-    "@babel/core": "^7.11.4",
-    "@babel/plugin-proposal-class-properties": "^7.10.4",
-    "@babel/plugin-proposal-numeric-separator": "^7.10.4",
-    "@babel/plugin-proposal-object-rest-spread": "^7.11.0",
-    "@babel/preset-env": "^7.11.0",
-    "@babel/preset-typescript": "^7.10.4",
+    "@babel/cli": "^7.18.10",
+    "@babel/core": "^7.18.10",
+    "@babel/preset-env": "^7.18.10",
+    "@babel/preset-typescript": "^7.18.6",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-commonjs": "^22.0.2",
     "@rollup/plugin-node-resolve": "^13.3.0",
@@ -49,6 +46,6 @@
   "license": "MIT",
   "//browserslist": "Prevent babel from over-transpiling anything",
   "browserslist": [
-    "chrome 75"
+    "firefox 100, last 1 iOS major versions"
   ]
 }
