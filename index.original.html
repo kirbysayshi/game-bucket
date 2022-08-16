@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Game Bucket</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        /* background-color:#000; */
+        background-color: #cc66cc;
+        position: relative;
+        height: 100%;
+        font-family: "Courier New", Courier, monospace;
+        color: white;
+      }
+      canvas,
+      img {
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-crisp-edges;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -o-user-select: none;
+        user-select: none;
+      }
+      #r {
+        position: relative;
+        margin: 0 auto;
+      }
+      #u {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        /* bottom: 0; */
+      }
+      .modal {
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.8);
+        overflow: hidden;
+        padding: 10vw;
+      }
+    </style>
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+  </head>
+  <body>
+    <div id="r">
+      <canvas id="c"></canvas>
+      <div id="u"></div>
+    </div>
+    <script>!function(){"use strict";function t(t,e){return{x:t||0,y:e||0}}let e=(t,e)=>(t.x=e.x,t.y=e.y,t),n=(t,e,n)=>(t.x=e,t.y=n,t);var r="214fcfc8c74f8dee.png";let i=[{path:r,name:"test"}];class o{t={};async preload(t){void 0===t&&(t=new Set),await Promise.all(i.map((async e=>{if(this.t[e.name]||t.size>0&&!t.has(e.name))return;let n=await(r=e.path,new Promise(((t,e)=>{let n=new Image;n.onload=()=>t(n),n.onerror=e,n.src=r})));var r;this.t[e.name]={path:e.path,name:e.name,i:n}})))}o(t){let e=this.t[t];if(!e)throw new Error(`Asset ${t} not loaded!`);return e.i}}function s(t){return t&&"object"==typeof t&&"number"==typeof t.id}let l=new class{l=-1;u=new Set;h=new Map;constructor(t){void 0===t&&(t=100),this.v=t,this.p=new Array(t)}m(){for(;;){let t=++this.l;if(t<this.v){if(this.p[t])continue;return this.p[t]={id:t,g:!0,u:!1}}{this.l=-1;let t=this.v=10*this.v,e=new Array(t);for(let t=0;t<this.p.length;t++)e[t]=this.p[t];this.p=e;for(let[e,n]of this.h){let r=new Array(t);for(let t=0;t<n.length;t++)r[t]=n[t];this.h.set(e,r)}}}}k(){return this.p}A(t){void 0!==t&&(t.u=!0,this.u.add(t.id))}M(t){return t.u||this.u.has(t.id)||!this.p[t.id]}T(){if(0===this.u.size)return;let t=!1,e=n=>{n&&"object"==typeof n&&!s(n)&&Object.values(n).forEach((n=>{!function(t){return s(t)&&!0===t.g}(n)||function(t){return s(t)&&!1===t.g}(n)?e(n):(this.A(n),t=!0)}))};this.u.forEach((t=>{this.u.delete(t),this.p[t]=void 0;for(let[,n]of this.h){let r=n[t];r&&(e(r),n[t]=void 0)}})),t&&this.T()}P(t){let e=this.m();for(let n=0;n<t.length;n++){let r=t[n];this.add(e,r)}return e}data(t,e){if(!t||t.u)return;return this.h.get(e)?.[t.id]}add(t,e){if(t.u)return;let n=this.h.get(e.D)??Array(this.v);return n[t.id]=e,this.h.set(e.D,n),t}remove(t,e){if(t.u)return;let n=this.h.get(e);return n?(n[t.id]=void 0,t):t}has(t,e){let n=this.h.get(e);return!(t.u||!n||!n[t.id])}select(t){let e=new Set;for(let n=0;n<t.length;n++){let r=t[n],i=this.h.get(r);if(!i)return[];if(0===e.size)for(let t=0;t<i.length;t++){void 0!==i[t]&&e.add(this.p[t])}else for(let t of e.values())void 0===i[t.id]&&e.delete(t)}return[...e]}F(t){let e=this.h.get(t);return e||[]}I(t){let e=this.select(t);if(0!==e.length)return e[0]}S(t){let e=this.h.get(t);if(e)for(let t=0;t<e.length;t++){let n=e[t];if(void 0!==n)return n}}};function a(){return l}let u=document.querySelector.bind(document),c=u("#r"),d=u("#c"),f=u("#u");if(!c||!d||!f)throw new Error("Could not locate DOM!");function w(){return c}function h(t,e,n){return t.addEventListener(e,n,!1),()=>{t.removeEventListener(e,n,!1)}}function v(t,e){if(void 0===e&&(e=""),null==t||void 0===t)throw new Error(`Fatal error: value ${t} ${e?`(${e})`:""} must not be null/undefined.`)}function p(t,e,n){let r=n.getContext("2d");if(!r)throw new Error("Could not create Context2d!");let i=window.devicePixelRatio||1;return n.style.width=t+"px",n.style.height=e+"px",n.width=Math.floor(t*i),n.height=Math.floor(e*i),r.scale(i,i),r.webkitImageSmoothingEnabled=!1,r.msImageSmoothingEnabled=!1,r.mozImageSmoothingEnabled=!1,r.imageSmoothingEnabled=!1,{width:t,height:e,$:n,C:r,j:i}}let m=["viewport","spring-constraint"],y=function(t,e){void 0===e&&(e="x");let n=a(),r=n.I(m),i=n.data(r,"viewport");v(i,"no viewport");let o=n.data(r,"spring-constraint"),s=n.data(o?.O,"mv");v(s,"no shake");let l=s.H.x,u=s.H.y,c=(t+l)/i.W,d=(t+u)/i.q,f=i.B,w="x"===e?f.width*c:f.height*d;return Math.floor(w)},g=t=>t/a().S("viewport").B.width*100;function k(){let e=function(){let t=window.innerWidth<window.innerHeight?window.innerWidth:.6*window.innerHeight,e=window.innerWidth<window.innerHeight?window.innerWidth/.6:window.innerHeight;return{D:"viewport",ratio:.6,width:t,height:e,W:100,q:100/.6,B:p(t,e,d)}}(),n=a();{let t=n.I(m),e=n.data(t,"spring-constraint");n.A(e?.O),n.A(e?.G),n.A(t)}let r={D:"mv",H:t(),J:t(),K:t()},i={D:"mv",H:t(),J:t(),K:t()},o=n.P([r]),s={D:"spring-constraint",O:n.P([i]),L:10,G:o,N:0,R:.1,U:.2};w().style.width=e.width+"px";let l=[e,s];n.P(l)}window.addEventListener("resize",k);let x=["drag-state","mv"],A=e=>{let n=e,r=e;return n.targetTouches?t(g(n.targetTouches[0].clientX),g(n.targetTouches[0].clientY)):t(g(r.clientX),g(r.clientY))};function M(t){let e=a();return t.filter((t=>!e.M(t)))}let T=()=>{},b=0,P=[];function D(){}function E(t){a().S("fps").V=t}console.log(r),async function(){let r=new o;await r.preload();let i=a();k(),function(){let n=w();h(n,"touchstart",(n=>{let r=A(n),i=a(),o=i.select(["pointer-target"]),s=null,l=null;if(o.forEach((t=>{if(s)return;let e=i.data(t,"pointer-target");e&&function(t,e){return t.x>e.X.x-e.Y.x&&t.x<e.X.x+e.Y.x&&t.y>e.X.y-e.Y.y&&t.y<e.X.y+e.Y.y}(r,e.Z)&&(s=t,l=e.Z.X)})),!s||!l)return;n.preventDefault();let u=[{D:"drag-state",target:s},{D:"mv",H:e(t(),l),J:e(t(),l),K:t()}];i.P(u)})),h(n,"touchmove",(t=>{let n=a(),r=M(n.select(x));if(0===r.length)return;t.preventDefault();let i=A(t),o=n.data(r[0],"mv");v(o),e(o.H,i),e(o.J,i)})),h(n,"touchend",(t=>{let e=a(),n=M(e.select(x));if(0===n.length)return;t.preventDefault();let r=e.data(n[0],"drag-state");v(r),r.target=null,e.A(n[0])}))}();let s=i.P([{D:"mv",H:{x:0,y:0},J:{x:0,y:0},K:{x:10,y:0}},{D:"dc"}]),l=[],u=[];var c,d;u.push((function(t,e){t.select(["mv"]).forEach((r=>{let i=t.data(r,"mv");i&&(((t,e)=>{t.H.x+=t.K.x*e*e*.001,t.H.y+=t.K.y*e*e*.001,n(t.K,0,0)})(i,e),(t=>{let e=2*t.H.x-t.J.x,r=2*t.H.y-t.J.y;n(t.J,t.H.x,t.H.y),n(t.H,e,r)})(i))}))})),l.push((t=>{let e=t.S("viewport");e.B.C.clearRect(0,0,e.B.$.width,e.B.$.height)})),l.push((function(e,n){let i=r.o("test"),o=e.S("viewport");!function(t,e,n,r,i,o,s){void 0===o&&(o=i),void 0===s&&(s=!1);let l=a().S("viewport"),u=y(r.x+e*(n.x-r.x)),c=y(r.y+e*(n.y-r.y)),d=y(i),f=y(o);l.B.C.drawImage(t,0,0,t.width,t.height,s?u-d/2:u,s?c-f/2:c,d,f)}(i,n,t(0,0),t(0,0),o.W,o.q)})),l.push((function(t,e){t.select(["mv","dc"]).forEach((n=>{let r=t.data(n,"mv");r&&(console.log("x",r.J.x+(r.H.x-r.J.x)*e),console.log("y",r.J.y+(r.H.y-r.J.y)*e))}))})),i.P([{D:"fps",V:60}]),l.push((t=>{let e=t.S("viewport"),n=t.S("fps").V.toFixed(2),r=e.height/44;e.B.C.font=`${r}/1.5 monospace`;let i=e.B.C.measureText(n).width+1,o=1.5*r-r;e.B.C.fillStyle="rgba(255,255,0,1)",e.B.C.fillText(n,e.width-i,e.height-o)})),c=(t,e)=>{i.A(s),console.log("marked entity for destruction",s)},d=3500,P.push({id:++b,action:c,delay:d,_:0}),(t=>{let{tt:e,et:n,nt:r,update:i,rt:o=10,it:s=T,ot:l=T,st:a=window.requestAnimationFrame.bind(window),lt:u=window.cancelAnimationFrame}=t,c=performance,d=e,f=n,w=c.now.bind(c),h=a,v=0,p=0,m=null,y=w(),g=w(),k=0,x=60;(function t(){let e=w();m=h(t);let n=e-y;v+=n,p+=n,y=e;let a=p-d>=0,u=Math.floor(v/f);if(u>=o)return v=0,y=w(),void s();for(;u-- >0;)v-=f,i(f);a&&(p-=d,r(1-(f-v)/f,d),k+=1),g+1e3<=e&&(x=.25*k+.75*x,k=0,g=e,l(x))})()})({tt:1e3/60,et:1e3/30,update:t=>{!function(t){void 0===t&&(t=1),P.slice().forEach(((e,n)=>{e._+=t,e._>=e.delay&&(P.splice(n,1),e.action(e.delay,e._))}))}(t),u.forEach((e=>e(i,t))),i.T()},nt:t=>{l.forEach((e=>e(i,t)))},it:D,ot:E})}()}();</script>
+  </body>
+</html>
