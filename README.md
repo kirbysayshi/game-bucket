@@ -2,6 +2,13 @@
 
 Common game utilities + rollup config, suitable for a small game competition. Like [JS13k](http://js13kgames.com/)! In TypeScript!
 
+Examples:
+
+- [Signal Decay, JS13K-2020](https://github.com/kirbysayshi/js13k-2020/)
+- [Health Alchemy (Incomplete), JS13K-2019](https://github.com/kirbysayshi/js13k-2019)
+- [Ghost High Fiver (Incomplete), JS13K-2018](https://github.com/kirbysayshi/ghost-high-fiver)
+- [Night Shift Barisa, JS13K-2016](https://github.com/kirbysayshi/night-shift-barista)
+
 Includes:
 
 - [Component Entity System](lib/ces.js)
