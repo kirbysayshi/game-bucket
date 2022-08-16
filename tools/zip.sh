@@ -69,14 +69,15 @@ mv dist/index.html dist/index.original.html
 mv dist/index.min.html dist/index.html
 
 # Optimize assets copied by rollup
-find dist/ -iname '*.png' -exec ./tools/tinypng.sh {} {} \;
+# find dist/ -iname '*.png' -exec ./tools/tinypng.sh {} {} \;
 # optimize texture-packed json, if applicable
 # node tools/shrink-texture-packer-json.js ./assets/sprites.json ./assets/sprites.json
 
 # Create the zip
 pushd dist/
 # ECT has much better compression than advzip, often times beating even the
-# roadrolled+advzip version just by itself!
+# roadrolled+advzip version just by itself! NOTE: it also optimizes PNGs and
+# JPEGs.
 $(node -p "require('ect-bin')") -strip -zip -10009 index.html *.png *.svg *.bmp
 # zip -X -r game.zip index.html *.png *.svg *.bmp *.js
 popd
