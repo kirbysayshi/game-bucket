@@ -1,4 +1,4 @@
-import { accelerate, inertia, v2 } from 'pocket-physics';
+import { accelerate, inertia } from 'pocket-physics';
 import ScienceHalt from 'science-halt';
 import TestPng from '../assets/00 - Fool.png';
 import { AssetMap } from './asset-map';
@@ -12,11 +12,7 @@ import {
 import { initDragListeners } from './drag';
 import { createGameLoop } from './loop';
 import { schedule, tick } from './time';
-import {
-  computeWindowResize,
-  drawAsset,
-  ViewportUnitVector2,
-} from './viewport';
+import { computeWindowResize, drawAsset, vv2 } from './viewport';
 
 console.log(TestPng);
 
@@ -43,9 +39,9 @@ async function boot() {
   const e1 = ces.entity([
     {
       k: 'v-movement',
-      cpos: { x: 0, y: 0 } as ViewportUnitVector2,
-      ppos: { x: 0, y: 0 } as ViewportUnitVector2,
-      acel: { x: 10, y: 0 } as ViewportUnitVector2,
+      cpos: vv2(0, 0),
+      ppos: vv2(0, 0),
+      acel: vv2(10, 0),
     },
     { k: 'draw-console' },
   ]);
@@ -85,8 +81,8 @@ async function boot() {
     drawAsset(
       bg,
       interp,
-      v2(0, 0) as ViewportUnitVector2,
-      v2(0, 0) as ViewportUnitVector2,
+      vv2(0, 0),
+      vv2(0, 0),
       screen.vpWidth,
       screen.vpHeight
     );

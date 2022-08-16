@@ -15,10 +15,11 @@ export type ViewportUnits<T = number> = T & { _isViewportUnits: true };
 export function asViewportUnits(n: number) {
   return n as ViewportUnits;
 }
-export type ViewportUnitVector2 = {
-  x: ViewportUnits;
-  y: ViewportUnits;
-};
+export type ViewportUnitVector2 = Vector2<ViewportUnits>;
+
+export function vv2(x: number = 0, y: number = 0) {
+  return v2(x, y) as ViewportUnitVector2;
+}
 
 export type ViewportCmp = {
   k: 'viewport';
@@ -151,16 +152,16 @@ export function computeWindowResize() {
 
   const anchor: MovementCmp = {
     k: 'v-movement',
-    cpos: v2() as ViewportUnitVector2,
-    ppos: v2() as ViewportUnitVector2,
-    acel: v2() as ViewportUnitVector2,
+    cpos: vv2(),
+    ppos: vv2(),
+    acel: vv2(),
   };
 
   const shake: MovementCmp = {
     k: 'v-movement',
-    cpos: v2() as ViewportUnitVector2,
-    ppos: v2() as ViewportUnitVector2,
-    acel: v2() as ViewportUnitVector2,
+    cpos: vv2(),
+    ppos: vv2(),
+    acel: vv2(),
   };
 
   const anchorId = ces.entity([anchor]);

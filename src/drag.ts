@@ -1,4 +1,4 @@
-import { copy, v2 } from 'pocket-physics';
+import { copy } from 'pocket-physics';
 import { AssuredEntityId } from './ces';
 import {
   Component,
@@ -8,7 +8,7 @@ import {
 } from './components';
 import { listen, useRootElement } from './dom';
 import { assertDefinedFatal } from './utils';
-import { toViewportUnits, ViewportUnitVector2 } from './viewport';
+import { toViewportUnits, ViewportUnitVector2, vv2 } from './viewport';
 
 // https://developer.mozilla.org/en-US/docs/Web/API/Touch_events/Using_Touch_Events
 // https://developers.google.com/web/fundamentals/design-and-ux/input/touch/#implement-custom-gestures
@@ -49,15 +49,15 @@ const pointFromEvent = (ev: TouchEvent | MouseEvent): ViewportUnitVector2 => {
   const asMouse = ev as MouseEvent;
 
   if (asTouch.targetTouches) {
-    return v2(
+    return vv2(
       toViewportUnits(asTouch.targetTouches[0].clientX),
       toViewportUnits(asTouch.targetTouches[0].clientY)
-    ) as ViewportUnitVector2;
+    );
   } else {
-    return v2(
+    return vv2(
       toViewportUnits(asMouse.clientX),
       toViewportUnits(asMouse.clientY)
-    ) as ViewportUnitVector2;
+    );
   }
 };
 
@@ -104,11 +104,11 @@ export function initDragListeners() {
       {
         k: 'v-movement',
         // Use the found center so the drag target "snaps" to the touch position
-        cpos: copy(v2(), foundCenter) as ViewportUnitVector2,
-        ppos: copy(v2(), foundCenter) as ViewportUnitVector2,
-        // cpos: copy(v2(), point) as ViewportUnitVector2,
-        // ppos: copy(v2(), point) as ViewportUnitVector2,
-        acel: v2() as ViewportUnitVector2,
+        cpos: copy(vv2(), foundCenter),
+        ppos: copy(vv2(), foundCenter),
+        // cpos: copy(v2(), point),
+        // ppos: copy(v2(), point),
+        acel: vv2(),
       },
     ];
 

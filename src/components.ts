@@ -1,8 +1,12 @@
-import { v2 } from 'pocket-physics';
 import { LoadedAsset } from './asset-map';
 import { AssuredEntityId, CES3, NarrowComponent } from './ces';
 import { DragStateCmp, PointerTargetCmp } from './drag';
-import { ViewportCmp, ViewportUnits, ViewportUnitVector2 } from './viewport';
+import {
+  ViewportCmp,
+  ViewportUnits,
+  ViewportUnitVector2,
+  vv2,
+} from './viewport';
 
 export type FPSCmp = {
   k: 'fps';
@@ -80,9 +84,9 @@ export function drawableAssetDef(
   return [
     {
       k: 'v-movement',
-      cpos: v2(x, y) as ViewportUnitVector2,
-      ppos: v2(x, y) as ViewportUnitVector2,
-      acel: v2() as ViewportUnitVector2,
+      cpos: vv2(x, y),
+      ppos: vv2(x, y),
+      acel: vv2(),
     },
     {
       k: 'asset',
