@@ -13,6 +13,7 @@ NODE_ENV=production yarn build
 
 # compress JS
 terser dist/bundle.js --compress --mangle --mangle-props -o dist/bundle.min.js
+mv -f dist/bundle.js dist/bundle-original.js
 mv -f dist/bundle.min.js dist/bundle.js
 
 # replace string constants with shorter, yet unique, values!

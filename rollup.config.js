@@ -1,3 +1,5 @@
+// @ts-check
+
 import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
@@ -41,6 +43,7 @@ export default {
     babel({ extensions, babelHelpers: 'bundled', include: ['src/**/*'] }),
 
     replace({
+      preventAssignment: true,
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
 
