@@ -50,7 +50,7 @@ export class AssetMap {
 
   getImage(name: AssetNames): HTMLImageElement {
     const asset = this.loadedAssets[name];
-    if (!asset) throw new Error(`Asset ${name} not loaded!`);
+    if (!asset) throw new Error(`LD_${name}`);
     return asset.img;
   }
 }

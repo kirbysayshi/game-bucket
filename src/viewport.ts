@@ -64,13 +64,8 @@ export const toPixelUnits = (n: ViewportUnits, axis: 'x' | 'y' = 'x') => {
 export const toViewportUnits = (n: number): ViewportUnits => {
   const ces = useCES();
   const vp = ces.selectFirstData('viewport');
-  if (process.env.NODE_ENV !== 'production') {
-    if (!vp)
-      throw new Error(
-        'tried to compute pixel units without a viewport defined!'
-      );
-  }
-  const units = (n / vp!.dprCanvas.width) * 100;
+  assertDefinedFatal(vp);
+  const units = (n / vp.dprCanvas.width) * 100;
   return units as ViewportUnits;
 };
 

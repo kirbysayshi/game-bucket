@@ -1,3 +1,7 @@
+/**
+ * Useful in dev for avoiding usage of the ! operator. Will be removed by rollup
+ * before compression.
+ */
 export function assertDefinedFatal<T>(
   value: T | null | undefined,
   context = ''

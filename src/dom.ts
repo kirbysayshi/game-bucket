@@ -1,11 +1,11 @@
 const qsel = document.querySelector.bind(document);
 
-const ROOT_EL = qsel("#r");
-const PRIMARY_CVS = qsel("#c");
-const UI_ROOT = qsel("#u");
+const ROOT_EL = qsel('#r');
+const PRIMARY_CVS = qsel('#c');
+const UI_ROOT = qsel('#u');
 
 if (!ROOT_EL || !PRIMARY_CVS || !UI_ROOT) {
-  throw new Error("Could not locate DOM!");
+  throw new Error('ERR_DOM');
 }
 
 export function usePrimaryCanvas() {
@@ -37,9 +37,9 @@ export function createTap(el: HTMLElement, cb: () => void) {
   const onTouchEnd = (ev: TouchEvent) => {
     cb();
   };
-  const un1 = listen(el, "mouseup", onMouseUp);
-  const un2 = listen(el, "touchstart", onTouchStart);
-  const un3 = listen(el, "touchend", onTouchEnd);
+  const un1 = listen(el, 'mouseup', onMouseUp);
+  const un2 = listen(el, 'touchstart', onTouchStart);
+  const un3 = listen(el, 'touchend', onTouchEnd);
 
   return () => {
     un1();

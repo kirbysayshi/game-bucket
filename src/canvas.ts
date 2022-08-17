@@ -19,7 +19,7 @@ export function makeDPRCanvas(
 ): DPRCanvas {
   const ctx = cvs.getContext('2d');
 
-  if (!ctx) throw new Error('Could not create Context2d!');
+  if (!ctx) throw new Error('ERR_CTX');
 
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
 

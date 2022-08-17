@@ -16,6 +16,44 @@ const pluginTransformConstToLet = () => ({
   },
 });
 
+// Replace well-known string constants with shorter, yet unique, names!
+const pluginShortenKnownStrings = () => ({
+  renderChunk(chunk) {
+    const pairs = [
+      ['v-movement', 'mv'],
+      ['draw-console', 'dc'],
+      ['viewport', 'vp'],
+      ['drag-state', 'ds'],
+      ['pointer-target', 'pt'],
+      ['spring-constraint', 'sc'],
+    ];
+
+    const shorts = new Set();
+
+    for (const [long, short] of pairs) {
+      if (shorts.has(short))
+        throw new Error(`Need a unique short name! Got ${short}`);
+      shorts.add(short);
+      chunk = chunk.replace(
+        new RegExp(`['"]${long}['"]`, 'g'),
+        JSON.stringify(short)
+      );
+    }
+
+    return chunk;
+  },
+});
+
+// Replace typescript assertions. Hacky to do it via regex, but it's well-known
+// and easier than writing a rollup plugin. Note that this uses a negative
+// lookbehind to avoid targeting the function definition itself, only supported
+// in V8.
+const pluginRemoveTypescriptAssertions = () => ({
+  renderChunk(chunk) {
+    return chunk.replace(/(?<!function )assertDefinedFatal\([^)]+\)/g, '');
+  },
+});
+
 export default {
   input: './src/index.ts',
   plugins: [
@@ -47,7 +85,13 @@ export default {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
 
-    pluginTransformConstToLet(),
+    ...(process.env.NODE_ENV === 'production'
+      ? [
+          pluginTransformConstToLet(),
+          pluginShortenKnownStrings(),
+          pluginRemoveTypescriptAssertions(),
+        ]
+      : []),
 
     copy({ targets: [{ src: 'src/index.html', dest: 'dist/' }] }),
   ],
