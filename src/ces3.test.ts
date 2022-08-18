@@ -4,7 +4,7 @@ import {
   AssuredEntityId,
   borrowAssuredEntityId,
   CES3,
-} from './ces';
+} from './ces3';
 
 type C1 = {
   k: 'c1';

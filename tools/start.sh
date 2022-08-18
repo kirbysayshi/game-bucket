@@ -5,6 +5,6 @@ set -e
 
 yarn types --watch &
 yarn build --watch &
-yarn http-server dist/ &
+yarn http-server -c-1 dist/ &
 
 wait

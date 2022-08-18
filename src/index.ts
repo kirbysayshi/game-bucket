@@ -7,12 +7,23 @@ import {
   DrawTimeHz,
   UpdateStepSystem,
   UpdateTimeHz,
-  useCES,
 } from './components';
 import { initDragListeners } from './drag';
 import { createGameLoop } from './loop';
+import { useDebugMode } from './query-string';
+import { BodyTextLines, YellowRGBA } from './theme';
 import { schedule, tick } from './time';
-import { computeWindowResize, drawAsset, vv2 } from './viewport';
+import { useCES } from './use-ces';
+import { assertDefinedFatal } from './utils';
+import {
+  clearScreen,
+  computeWindowResize,
+  drawAsset,
+  drawTextLinesInViewport,
+  moveViewportCamera,
+  predictTextHeight,
+  vv2,
+} from './viewport';
 
 console.log(TestPng);
 
@@ -52,6 +63,13 @@ async function boot() {
   const drawStepSystems: DrawStepSystem[] = [];
   const updateStepSystems: UpdateStepSystem[] = [];
 
+  {
+    // Move the camera so the test image is framed nicely.
+    const vp = ces.selectFirstData('viewport');
+    assertDefinedFatal(vp);
+    moveViewportCamera(vv2(vp.vpWidth / 2, vp.camera.frustrum.y));
+  }
+
   // Physics "system", updated at 10fps
   updateStepSystems.push(function (ces, dt) {
     const entities = ces.select(['v-movement']);
@@ -65,19 +83,14 @@ async function boot() {
 
   // clear the screen at 60fps
   drawStepSystems.push((ces) => {
-    const screen = ces.selectFirstData('viewport')!;
-    screen.dprCanvas.ctx.clearRect(
-      0,
-      0,
-      screen.dprCanvas.cvs.width,
-      screen.dprCanvas.cvs.height
-    );
+    clearScreen();
   });
 
   // Draw "system" updated at 60fps
   drawStepSystems.push(function (ces, interp) {
     const bg = assets.getImage('test');
-    const screen = ces.selectFirstData('viewport')!;
+    const screen = ces.selectFirstData('viewport');
+    assertDefinedFatal(screen);
     drawAsset(
       bg,
       interp,
@@ -104,32 +117,21 @@ async function boot() {
 
   // Draw the FPS as text on the canvas
   drawStepSystems.push((ces) => {
-    const screen = ces.selectFirstData('viewport')!;
-    const fpsData = ces.selectFirstData('fps')!;
+    if (!useDebugMode()) return;
+
+    const screen = ces.selectFirstData('viewport');
+    const fpsData = ces.selectFirstData('fps');
+    assertDefinedFatal(screen);
+    assertDefinedFatal(fpsData);
+
     const text = fpsData.v.toFixed(2);
-    // How many lines of text do we want to be able to display on canvas?
-    // Ok, use that as the font size. This assumes the canvas size _ratio_ is fixed but
-    // the actual pixel dimensions are not.
-    // TODO: The canvas size is currently a fixed ratio, but different physical sizes
-    // depending on the screen in order to have crisp pixels regardless. This means all
-    // layout must be relative units. This might be a huge problem / difficulty...
-    const maxLinesPerCanvas = 44;
-    const textSize = screen.height / maxLinesPerCanvas;
-    const lineHeight = 1.5;
-    screen.dprCanvas.ctx.font = `${textSize}/${lineHeight} monospace`;
-    const measure = screen.dprCanvas.ctx.measureText(text);
-    const width = measure.width + 1;
-    // fillText uses textBaseline as coordinates. "alphabetic" textBaseline is default,
-    // so we attempt to compensate by subtracting the text size.
-    // For example, drawing "g" at 0,0 will result in only the decender showing on the
-    // canvas! We could change the baseline, but then text blocks / paragraphs would be
-    // hard to read.
-    const height = textSize * lineHeight - textSize;
-    screen.dprCanvas.ctx.fillStyle = 'rgba(255,255,0,1)';
-    screen.dprCanvas.ctx.fillText(
+    const h = predictTextHeight(text, BodyTextLines);
+    drawTextLinesInViewport(
       text,
-      screen.width - width,
-      screen.height - height
+      vv2(screen.vpWidth, -screen.vpHeight + h.total),
+      'right',
+      BodyTextLines,
+      YellowRGBA
     );
   });
 

@@ -1,6 +1,7 @@
 import { LoadedAsset } from './asset-map';
-import { AssuredEntityId, CES3, NarrowComponent } from './ces';
+import { AssuredEntityId, CES3, NarrowComponent } from './ces3';
 import { DragStateCmp, PointerTargetCmp } from './drag';
+import { useCES } from './use-ces';
 import {
   ViewportCmp,
   ViewportUnits,
@@ -140,9 +141,3 @@ export const UpdateTimeHz = 30 as const;
 // they are invoked: every frame or once every update step (10fps by default).
 export type DrawStepSystem = (ces: CES3<Component>, interp: number) => void;
 export type UpdateStepSystem = (ces: CES3<Component>, dt: number) => void;
-
-const ces = new CES3<Component>();
-
-export function useCES() {
-  return ces;
-}

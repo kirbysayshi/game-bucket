@@ -191,7 +191,8 @@ export class CES3<ED extends EntityData> {
     if (!eid || eid.destroyed) return;
     const datas = this.cmpToIdArr.get(kind);
     if (process.env.NODE_ENV !== 'production') {
-      if (!datas) throw new Error('No component datas!');
+      if (!datas)
+        throw new Error(`No component datas! ${kind} ${JSON.stringify(eid)}`);
     }
     return datas?.[eid.id] as NarrowComponent<T, K> | undefined;
   }
@@ -280,7 +281,7 @@ export class CES3<ED extends EntityData> {
   selectFirstData<T extends ED['k']>(kind: T) {
     const datas = this.cmpToIdArr.get(kind);
     if (process.env.NODE_ENV !== 'production') {
-      if (!datas) throw new Error('No component datas!');
+      if (!datas) throw new Error(`No component datas! ${kind}`);
     }
     if (!datas) return;
     for (let i = 0; i < datas.length; i++) {

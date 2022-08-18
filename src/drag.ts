@@ -1,12 +1,8 @@
 import { copy } from 'pocket-physics';
-import { AssuredEntityId } from './ces';
-import {
-  Component,
-  EntityDefSelector,
-  MovementCmp,
-  useCES,
-} from './components';
+import { AssuredEntityId } from './ces3';
+import { Component, EntityDefSelector, MovementCmp } from './components';
 import { listen, useRootElement } from './dom';
+import { useCES } from './use-ces';
 import { assertDefinedFatal } from './utils';
 import { toViewportUnits, ViewportUnitVector2, vv2 } from './viewport';
 
