@@ -37,10 +37,15 @@ export type AssuredBorrowedEntityId<ED extends EntityData> =
     _assured: ED;
   };
 
-export function downgradeAssuredEntityId<
-  C extends EntityData,
-  K extends C['k']
->(eid: AssuredEntityId<C>, k: K) {
+/**
+ * Take an entity id with multiple data types, like v-movement | something-else,
+ * and narrow it to just K. Useful when assigning an entityId to a function
+ * signature or other type.
+ */
+export function narrowAssuredEntityId<C extends EntityData, K extends C['k']>(
+  eid: AssuredEntityId<C>,
+  k: K
+) {
   return eid as AssuredEntityId<NarrowComponent<C, typeof k>>;
 }
 
@@ -245,16 +250,18 @@ export class CES3<ED extends EntityData> {
   }
 
   select<T extends ED['k']>(kinds: T[] | readonly T[]) {
-    const matching = new Set<EntityId>();
+    const matching = new Set<AssuredEntityId<NarrowComponent<ED, T>>>();
 
     for (let i = 0; i < kinds.length; i++) {
       const kind = kinds[i];
       const datas = this.cmpToIdArr.get(kind);
-      if (!datas) return [];
+      if (!datas) return new Set<AssuredEntityId<NarrowComponent<ED, T>>>();
       if (matching.size === 0) {
         for (let k = 0; k < datas.length; k++) {
           const data = datas[k];
-          if (data !== undefined) matching.add(this.ids[k] as EntityId);
+          const eid = this.ids[k];
+          if (data !== undefined && eid)
+            matching.add(eid as AssuredEntityId<NarrowComponent<ED, T>>);
         }
       } else {
         for (const eid of matching.values()) {
@@ -263,7 +270,7 @@ export class CES3<ED extends EntityData> {
       }
     }
 
-    return [...matching] as AssuredEntityId<NarrowComponent<ED, T>>[];
+    return matching as Set<AssuredEntityId<NarrowComponent<ED, T>>>;
   }
 
   selectData<T extends ED['k']>(kind: T) {
@@ -274,8 +281,9 @@ export class CES3<ED extends EntityData> {
 
   selectFirst(kinds: ED['k'][] | readonly ED['k'][]) {
     const selection = this.select(kinds);
-    if (selection.length === 0) return undefined;
-    return selection[0];
+    for (const selected of selection) {
+      return selected;
+    }
   }
 
   selectFirstData<T extends ED['k']>(kind: T) {

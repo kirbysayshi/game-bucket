@@ -4,6 +4,7 @@ import {
   AssuredEntityId,
   borrowAssuredEntityId,
   CES3,
+  narrowAssuredEntityId,
 } from './ces3';
 
 type C1 = {
@@ -61,6 +62,10 @@ test('ces entity id types', () => {
   const id22 = ces.add(id2, { k: 'c1', p1: 23 });
   const t6: AssertIs<typeof id22, AssuredEntityId<C1 | C2>> = true;
   expect(t6).toBe(true);
+
+  const dg = narrowAssuredEntityId(id, 'c2');
+  const t7: AssertIs<typeof dg, AssuredEntityId<C2>> = true;
+  expect(t7).toBe(true);
 });
 
 test('ces3 entity creation causes expansion', () => {

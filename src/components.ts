@@ -1,6 +1,5 @@
 import { LoadedAsset } from './asset-map';
 import { AssuredEntityId, CES3, NarrowComponent } from './ces3';
-import { DragStateCmp, PointerTargetCmp } from './drag';
 import { useCES } from './use-ces';
 import {
   ViewportCmp,
@@ -53,15 +52,6 @@ export type DrawConsoleCmp = {
   k: 'draw-console';
 };
 
-export type UIEventBindingCmp = {
-  k: 'ui-bind';
-  el: HTMLElement;
-  // TODO: this might be a nice lifecycle thing. like this fn gets called, if
-  // it exists, when the component itself is destroyed. Would need a different
-  // name then. willDestroy?
-  destroy: () => void;
-};
-
 export type AssetCmp = {
   k: 'asset';
   asset: LoadedAsset;
@@ -101,12 +91,9 @@ export function drawableAssetDef(
 export type Component =
   | FPSCmp
   | AssetCmp
-  | DragStateCmp
   | SpringConstraintCmp
-  | PointerTargetCmp
   | CircleCmp
   | ViewportCmp
-  | UIEventBindingCmp
   | MovementCmp
   | DrawConsoleCmp;
 
@@ -122,16 +109,6 @@ export type EntityDefSelector<T extends [Component] | Component[]> = Readonly<{
 export type DefToAssuredEntityId<T extends Component[]> = AssuredEntityId<
   NarrowComponent<Component, T[number]['k']>
 >;
-
-// Allow type inference of K to narrow an assured entity. Without this,
-// const id: AssuredEntityId<C> = AssuredEntityId<A | B | C> will fail
-// const id: AssuredEntityId<C> = narrowAssuredEntity(AssuredEntityId<A | B | C>) is good!
-export function narrowAssuredEntity<
-  T extends Component,
-  K extends AssuredEntityId<T>
->(id: AssuredEntityId<T>) {
-  return id as K;
-}
 
 export const DrawTimeHz = 60 as const;
 export const UpdateTimeHz = 30 as const;

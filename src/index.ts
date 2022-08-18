@@ -8,7 +8,6 @@ import {
   UpdateStepSystem,
   UpdateTimeHz,
 } from './components';
-import { initDragListeners } from './drag';
 import { createGameLoop } from './loop';
 import { useDebugMode } from './query-string';
 import { BodyTextLines, YellowRGBA } from './theme';
@@ -41,8 +40,8 @@ async function boot() {
   // create the initial viewport and sizing
   computeWindowResize();
 
-  // initialize touch: look at js13k-2019 for how to use (pointer-target, etc)
-  initDragListeners();
+  // For a good example of touch + keyboard input, see
+  // https://github.com/kirbysayshi/js13k-2020/blob/master/src/ui.ts
 
   // An entity is just a numeric ID with associated "tagged" data denoted by
   // property 'k'. The unique names give to 'k' allow us to lookup that data
