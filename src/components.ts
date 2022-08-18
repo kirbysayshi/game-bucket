@@ -97,6 +97,12 @@ export type Component =
   | MovementCmp
   | DrawConsoleCmp;
 
+// NOTE: you don't really need EntityDefSelector and DefToAssuredEntityId. It's
+// easier to use AssuredEntityId<...> and keep references to the IDs. Plus the
+// borrowing system allows for more complex relationships and lifecycles anyway.
+// EntityDefSelector is really only useful for systems to define what they
+// require.
+
 // Mapped types are bonkers! The syntax... Without the second
 // `extends Component` it would not allow indexing by `"k"`.
 export type EntityDefSelector<T extends [Component] | Component[]> = Readonly<{
