@@ -1,11 +1,12 @@
-const qsel = document.querySelector.bind(document);
+export const qsel = document.querySelector.bind(document);
+export const qsela = document.querySelectorAll.bind(document);
 
 const ROOT_EL = qsel('#r');
 const PRIMARY_CVS = qsel('#c');
 const UI_ROOT = qsel('#u');
 
 if (!ROOT_EL || !PRIMARY_CVS || !UI_ROOT) {
-  throw new Error('ERR_DOM');
+  throw new Error('Could not locate DOM!');
 }
 
 export function usePrimaryCanvas() {
@@ -48,15 +49,31 @@ export function createTap(el: HTMLElement, cb: () => void) {
   };
 }
 
-type Unlistener = () => void;
+// https://github.com/microsoft/TypeScript/issues/33047#issuecomment-524317113
+// Sometimes typescript makes things so hard...
+type EventMap<T> = T extends Window
+  ? WindowEventMap
+  : T extends Document
+  ? DocumentEventMap
+  : T extends HTMLElement
+  ? HTMLElementEventMap
+  : { [key: string]: Event };
 
-export function listen<K extends keyof HTMLElementEventMap>(
-  el: HTMLElement,
-  ev: K,
-  handler: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any
-): Unlistener {
-  el.addEventListener(ev, handler, false);
+export function listen<
+  T extends EventTarget,
+  K extends keyof EventMap<T> & string
+>(
+  target: T,
+  type: K,
+  callback: (this: T, ev: EventMap<T>[K]) => any,
+  options?: AddEventListenerOptions
+) {
+  target.addEventListener(type, callback as EventListener, options);
   return () => {
-    el.removeEventListener(ev, handler, false);
+    target.removeEventListener(type, callback as EventListener, options);
   };
+}
+
+export function isLikelyTouchDevice() {
+  return matchMedia('(hover: none)').matches;
 }
