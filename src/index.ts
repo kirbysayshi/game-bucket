@@ -70,8 +70,9 @@ async function boot() {
   }
 
   // Physics "system", updated at 10fps
+  const qMovement = ces.createQuery(['v-movement']);
   updateStepSystems.push(function (ces, dt) {
-    const entities = ces.select(['v-movement']);
+    const entities = ces.select(qMovement);
     entities.forEach((e) => {
       const cmp = ces.data(e, 'v-movement');
       if (!cmp) return;
@@ -101,8 +102,9 @@ async function boot() {
   });
 
   // "draw" the position of this object to the console at 60fps
+  const qDraw = ces.createQuery(['v-movement', 'draw-console']);
   drawStepSystems.push(function (ces, interp) {
-    const entities = ces.select(['v-movement', 'draw-console']);
+    const entities = ces.select(qDraw);
     entities.forEach((e) => {
       const cmp = ces.data(e, 'v-movement');
       if (!cmp) return;

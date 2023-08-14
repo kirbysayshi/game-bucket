@@ -367,7 +367,8 @@ export function computeWindowResize() {
   const ces = useCES();
 
   // On resize, destroy existing component and depdendent components.
-  const existingId = ces.selectFirst(['viewport']);
+  const q = ces.createQuery(['viewport']);
+  const existingId = ces.selectFirst(q);
   if (existingId) {
     ces.destroy(existingId);
   }

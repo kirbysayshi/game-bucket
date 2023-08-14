@@ -1,10 +1,10 @@
 import { LoadedAsset } from './asset-map';
-import { AssuredEntityId, CES3, NarrowComponent } from './ces3';
+import { AssuredEntityId, CES4, NarrowComponent } from './ces4';
 import { useCES } from './use-ces';
 import {
   ViewportCmp,
-  ViewportUnits,
   ViewportUnitVector2,
+  ViewportUnits,
   vv2,
 } from './viewport';
 
@@ -122,5 +122,5 @@ export const UpdateTimeHz = 30 as const;
 // A system of an entity-component-system framework is simply a function that
 // is repeatedly called. We separate them into two types based on how often
 // they are invoked: every frame or once every update step (10fps by default).
-export type DrawStepSystem = (ces: CES3<Component>, interp: number) => void;
-export type UpdateStepSystem = (ces: CES3<Component>, dt: number) => void;
+export type DrawStepSystem = (ces: CES4<Component>, interp: number) => void;
+export type UpdateStepSystem = (ces: CES4<Component>, dt: number) => void;

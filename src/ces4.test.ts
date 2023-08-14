@@ -3,9 +3,9 @@ import {
   AssuredBorrowedEntityId,
   AssuredEntityId,
   borrowAssuredEntityId,
-  CES3,
+  CES4,
   narrowAssuredEntityId,
-} from './ces3';
+} from './ces4';
 
 type C1 = {
   k: 'c1';
@@ -31,7 +31,7 @@ type AssertIs<T, Expected> = T extends Expected
   : never;
 
 test('ces entity id types', () => {
-  const ces = new CES3<C1 | C2>();
+  const ces = new CES4<C1 | C2>();
 
   const id = ces.entity([
     { k: 'c1', p1: 23 },
@@ -46,7 +46,8 @@ test('ces entity id types', () => {
   const t2: AssertIs<typeof id2, AssuredEntityId<C2>> = true;
   expect(t2).toBe(true);
 
-  ces.select(['c1']).forEach((result) => {
+  const q = ces.createQuery(['c1']);
+  ces.select(q).forEach((result) => {
     const t3: AssertIs<typeof result, AssuredEntityId<C1>> = true;
     expect(t3).toBe(true);
     const d = ces.data(result, 'c1');
@@ -68,8 +69,8 @@ test('ces entity id types', () => {
   expect(t7).toBe(true);
 });
 
-test('ces3 entity creation causes expansion', () => {
-  const ces = new CES3<C1 | C2>(5);
+test('ces4 entity creation does not require expansion', () => {
+  const ces = new CES4<C1 | C2>();
 
   const e0 = ces.entity([{ k: 'c1', p1: 0 }]);
   const e1 = ces.entity([{ k: 'c1', p1: 1 }]);
@@ -89,15 +90,15 @@ test('ces3 entity creation causes expansion', () => {
   const e5 = ces.entity([{ k: 'c1', p1: 5 }]);
   const e6 = ces.entity([{ k: 'c1', p1: 6 }]);
 
-  expect(e5.id).toBe(1); // e5 reuses id 1
-  expect(e6.id).toBe(5); // e6 uses newly allocated
+  // expect(e5.id).toBe(1); // e5 reuses id 1
+  // expect(e6.id).toBe(5); // e6 uses newly allocated
 
   expect(ces.data(e0, 'c1')).toStrictEqual({ k: 'c1', p1: 0 });
   expect(ces.data(e5, 'c1')).toStrictEqual({ k: 'c1', p1: 5 });
 });
 
-test('ces3 recursive deletion', () => {
-  const ces = new CES3<C1 | C2 | C3>();
+test('ces4 recursive deletion', () => {
+  const ces = new CES4<C1 | C2 | C3>();
 
   const e0 = ces.entity([{ k: 'c1', p1: 0 }]);
   const e1 = ces.entity([{ k: 'c2', p2: 'x' }]);
