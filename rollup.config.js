@@ -6,7 +6,11 @@ import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import url from '@rollup/plugin-url';
 import copy from 'rollup-plugin-copy';
-import pkg from './package.json';
+
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
+
 
 const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 
