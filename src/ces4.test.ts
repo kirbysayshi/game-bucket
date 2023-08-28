@@ -117,3 +117,14 @@ test('ces4 recursive deletion', () => {
   expect(ces.data(e0, 'c1')).toBe(undefined);
   expect(ces.isDestroyed(e1)).toBe(false);
 });
+
+test('ces4 indices', () => {
+  const ces = new CES4<C1 | C2 | C3>();
+
+  const q = ces.createQuery(['c1']);
+  const results0 = ces.select(q);
+  expect(results0.size).toBe(0);
+  const e0 = ces.entity([{ k: 'c1', p1: 0 }]);
+  const results1 = ces.select(q);
+  expect(results1.size).toBe(1);
+});

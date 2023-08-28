@@ -182,6 +182,7 @@ export class CES4<ED extends EntityData> {
       this.add(eid, data, true);
     }
 
+    // We skipped index updating before, manually update matching indices.
     for (const index of this.indicies) {
       if (index.matchesQuery(q)) index.add(eid);
     }
