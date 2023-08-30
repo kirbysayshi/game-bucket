@@ -121,10 +121,49 @@ test('ces4 recursive deletion', () => {
 test('ces4 indices', () => {
   const ces = new CES4<C1 | C2 | C3>();
 
-  const q = ces.createQuery(['c1']);
-  const results0 = ces.select(q);
-  expect(results0.size).toBe(0);
-  const e0 = ces.entity([{ k: 'c1', p1: 0 }]);
-  const results1 = ces.select(q);
-  expect(results1.size).toBe(1);
+  const q1 = ces.createQuery(['c1']);
+  const q2 = ces.createQuery(['c1', 'c2']);
+  const q3 = ces.createQuery(['c1', 'c2', 'c3']);
+
+  {
+    const results = ces.select(q1);
+    expect(results.size).toBe(0);
+  }
+
+  {
+    const results = ces.select(q2);
+    expect(results.size).toBe(0);
+  }
+
+  {
+    const results = ces.select(q3);
+    expect(results.size).toBe(0);
+  }
+
+  ces.entity([
+    { k: 'c1', p1: 0 },
+    { k: 'c2', p2: '2' },
+  ]);
+
+  ces.entity([
+    { k: 'c1', p1: 10 },
+    { k: 'c2', p2: '20' },
+  ]);
+
+  ces.entity([{ k: 'c1', p1: 100 }]);
+
+  {
+    const results = ces.select(q1);
+    expect(results.size).toBe(3);
+  }
+
+  {
+    const results = ces.select(q2);
+    expect(results.size).toBe(2);
+  }
+
+  {
+    const results = ces.select(q3);
+    expect(results.size).toBe(0);
+  }
 });

@@ -27,6 +27,12 @@ function isBorrowedEntityId(obj: any): obj is BorrowedEntityId {
 }
 
 export type NarrowComponent<T, N> = T extends { k: N } ? T : never;
+
+
+// An "Assured" EntityId had, at the time it was returned, the specified
+// component data types. It might not still have those types if the data has
+// been removed from the Entity, or if the entity has been deleted. "Assured"
+// means, "mostly assured that these types were attached".
 export type AssuredEntityId<ED extends EntityData> = EntityId & {
   _assured: ED;
 };
@@ -175,20 +181,21 @@ export class CES4<ED extends EntityData> {
     const eid: EntityId = { id, destroyed: false, owned: true };
     this.eids.add(eid);
 
-    const q = new Query();
+    const kinds = new Set<string>();
     for (let i = 0; i < initData.length; i++) {
       const data = initData[i];
-      q.kinds.add(data.k);
+      kinds.add(data.k);
       this.add(eid, data, true);
     }
 
     // We skipped index updating before, manually update matching indices.
     for (const index of this.indicies) {
-      if (index.matchesQuery(q)) index.add(eid);
+      // exact match, OR the index is less-broad than the component (subset)
+      if (index.isSubsetOf(kinds)) index.add(eid);
     }
 
     return eid as AssuredEntityId<
-      NarrowComponent<ED, typeof initData[number]['k']>
+      NarrowComponent<ED, (typeof initData)[number]['k']>
     >;
   }
 
@@ -200,7 +207,7 @@ export class CES4<ED extends EntityData> {
    */
   data<T extends ED, K extends T['k']>(
     eid: AssuredEntityId<T> | undefined,
-    kind: K
+    kind: K,
   ) {
     if (!eid || eid.destroyed) return;
     const datas = this.collections.get(kind);
@@ -210,14 +217,14 @@ export class CES4<ED extends EntityData> {
   add<T extends ED, Existing extends ED>(
     eid: AssuredEntityId<Existing> | EntityId,
     initData: T,
-    skipIndicesUpdate = false
+    skipIndicesUpdate = false,
   ) {
     if (eid.destroyed) return;
     const collection = this.getOrCreateCollection(initData.k);
     collection.set(eid, initData);
 
     if (!skipIndicesUpdate) {
-      const kinds = new Set<T['k']>();
+      const kinds = new Set<string>();
       for (const [kind, collection] of this.collections) {
         if (collection.has(eid)) kinds.add(kind);
       }
@@ -232,24 +239,24 @@ export class CES4<ED extends EntityData> {
 
     // Return UPGRADED eid
     return eid as EntityId as AssuredEntityId<
-      NarrowComponent<ED, Existing['k'] | typeof initData['k']>
+      NarrowComponent<ED, Existing['k'] | (typeof initData)['k']>
     >;
   }
 
   remove<ExistingComponents extends ED>(
     eid: EntityId,
     kind: ExistingComponents['k'],
-    skipIndicesUpdate?: boolean
+    skipIndicesUpdate?: boolean,
   ): EntityId;
   remove<ExistingComponents extends ED>(
     eid: AssuredEntityId<ExistingComponents>,
     kind: ExistingComponents['k'],
-    skipIndicesUpdate?: boolean
+    skipIndicesUpdate?: boolean,
   ): AssuredEntityId<Exclude<ExistingComponents['k'], typeof kind>>;
   remove<ExistingComponents extends ED>(
     eid: AssuredEntityId<ExistingComponents> | EntityId,
     kind: ExistingComponents['k'],
-    skipIndicesUpdate = false
+    skipIndicesUpdate = false,
   ) {
     if (eid.destroyed) return;
 
@@ -270,7 +277,7 @@ export class CES4<ED extends EntityData> {
 
   has<ExistingComponents extends ED>(
     eid: EntityId,
-    kind: ExistingComponents['k']
+    kind: ExistingComponents['k'],
   ) {
     const datas = this.collections.get(kind);
     if (eid.destroyed || !datas || !datas.get(eid)) return false;
