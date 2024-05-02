@@ -1,5 +1,11 @@
 import { v2 } from 'pocket-physics';
-import { EntityManager, PointMassComponentMan, lookup } from './ces5';
+import {
+  EntityManager,
+  PointMassComponentMan,
+  addComponent,
+  lookup,
+  removeComponent,
+} from './ces5';
 
 test('entity create', async () => {
   const eman = new EntityManager();
@@ -16,24 +22,21 @@ test('cpos', () => {
 
   const e0 = eman.create();
 
-  pointman.add({
-    entity: e0,
+  addComponent(pointman, e0, {
     acel: v2(),
     ppos: v2(),
     cpos: v2(),
     mass: 0,
   });
 
-  pointman.add({
-    entity: e0,
+  addComponent(pointman, e0, {
     acel: v2(),
     ppos: v2(),
     cpos: v2(),
     mass: 1,
   });
 
-  pointman.add({
-    entity: e0,
+  addComponent(pointman, e0, {
     acel: v2(),
     ppos: v2(),
     cpos: v2(),
@@ -41,8 +44,7 @@ test('cpos', () => {
   });
 
   const e1 = eman.create();
-  pointman.add({
-    entity: e1,
+  addComponent(pointman, e1, {
     acel: v2(1, 1),
     ppos: v2(1, 1),
     cpos: v2(1, 1),
@@ -58,7 +60,7 @@ test('cpos', () => {
 
   console.dir(pointman, { depth: 999 });
 
-  pointman.remove(e0);
+  removeComponent(pointman, e0);
 
   console.dir(pointman, { depth: 999 });
 });

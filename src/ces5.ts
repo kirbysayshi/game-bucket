@@ -25,9 +25,9 @@ function xassert(value: boolean, debug: unknown) {
   if (!value) throw new Error(`expected true, got false: ${debug}`);
 }
 
-interface ComponentManager<T> {
-  get(id: EntityId): T | undefined;
-}
+// interface ComponentManager<T> {
+//   get(id: EntityId): T | undefined;
+// }
 
 const ENTITY_INDEX_BITS = 22;
 const ENTITY_INDEX_MASK = (1 << ENTITY_INDEX_BITS) - 1;
@@ -66,96 +66,119 @@ type ComponentManagerHandle = {
   idx: number;
 };
 
-export function lookup(man: PointMassComponentMan, eid: EntityId) {
+export function lookup<T extends ComponentData>(
+  man: ComponentManager<T>,
+  eid: EntityId,
+) {
   const idx = man.map.get(eid);
   return idx ? { idx } : null;
 }
 
+export function addComponent<T extends ComponentData>(
+  man: ComponentManager<T>,
+  eid: EntityId,
+  init: {
+    [K in keyof T]: T[K][number];
+  },
+) {
+  const idx = man.entities.length || 1;
+  for (let key of Object.keys(init) as (keyof typeof init)[]) {
+    man.data[key][idx] = init[key];
+  }
+  man.entities[idx] = eid;
+
+  // Allow multiple instances of the component per ID!
+  const existing = man.map.get(eid);
+  if (!existing) {
+    // This is the first
+    man.map.set(eid, idx);
+    return true;
+  } else {
+    // This is not the first
+    console.log('not first', eid, existing);
+    const nexts = man.nextData[existing] ?? { indices: [] };
+    nexts.indices.push(idx);
+    man.nextData[existing] = nexts;
+    console.log('after', man.nextData);
+  }
+}
+
+export function removeComponent<T extends ComponentData>(
+  man: ComponentManager<T>,
+  eid: EntityId,
+) {
+  const idx = man.map.get(eid);
+  if (!idx) return;
+
+  const indicesToRemove = [idx];
+  const nexts = man.nextData[idx];
+
+  if (nexts) {
+    indicesToRemove.push(...nexts.indices);
+  }
+
+  const keys = Object.keys(man.data) as (keyof typeof man.data)[];
+
+  // Go backwards through the array to preserve earlier indices until we
+  // process them.
+  for (let i = indicesToRemove.length - 1; i >= 0; i--) {
+    const idxToRemove = indicesToRemove[i];
+    const lastIdx = man.entities.length - 1;
+    const lastEntity = man.entities[lastIdx];
+
+    man.entities[idxToRemove] = man.entities[lastIdx];
+    man.entities.pop();
+
+    for (let k = 0; k < keys.length; k++) {
+      const key = keys[k];
+      man.data[key][idxToRemove] = man.data[key][lastIdx];
+      man.data[key].pop();
+    }
+
+    man.map.set(lastEntity, idx);
+    man.map.delete(eid);
+  }
+
+  man.nextData[idx] = { indices: [] };
+}
+
 type PointMassComponentData = {
-  entity: EntityId[];
   mass: number[];
   cpos: Vector2[];
   ppos: Vector2[];
   acel: Vector2[];
-  nextData: { indices: number[] }[];
 };
 
-export class PointMassComponentMan {
-  private data: PointMassComponentData = {
-    entity: [],
+interface ComponentData extends Record<string, unknown[]> {}
+
+interface ComponentManagerDataLess {
+  map: Map<EntityId, number>;
+  nextData: { indices: number[] }[];
+  entities: EntityId[];
+}
+
+interface ComponentManager<T extends ComponentData>
+  extends ComponentManagerDataLess {
+  data: T;
+}
+
+abstract class ComponentManagerImpl implements ComponentManagerDataLess {
+  // has to be public so that there can be a shared implementation without inheritance!
+  nextData: { indices: number[] }[] = [];
+  entities: EntityId[] = [];
+  map = new Map<EntityId, number>();
+}
+
+export class PointMassComponentMan
+  extends ComponentManagerImpl
+  implements ComponentManager<PointMassComponentData>
+{
+  data: PointMassComponentData = {
     mass: [],
     cpos: [],
     ppos: [],
     acel: [],
-    nextData: [],
   };
-
-  // has to be public so that lookups can be shared impl
-  public map = new Map<EntityId, number>();
-
-  // extract add and remove as standalone functions addComponent, removeComponent
-
-  add(init: {
-    [K in Exclude<
-      keyof PointMassComponentData,
-      'nextData'
-    >]: PointMassComponentData[K][number];
-  }) {
-    const eid = init.entity;
-    const idx = this.data.entity.length || 1;
-    for (let key of Object.keys(init) as (keyof typeof init)[]) {
-      this.data[key][idx] = init[key];
-    }
-
-    // Allow multiple instances of the component per ID!
-    const existing = this.map.get(eid);
-    if (!existing) {
-      // This is the first
-      this.map.set(eid, idx);
-      return true;
-    } else {
-      // This is not the first
-      const nexts = this.data.nextData[existing] ?? { indices: [] };
-      nexts.indices.push(idx);
-      this.data.nextData[existing] = nexts;
-    }
-  }
-
-  remove(eid: EntityId) {
-    const idx = this.map.get(eid);
-    if (!idx) return;
-
-    const indicesToRemove = [idx];
-    const nexts = this.data.nextData[idx];
-
-    if (nexts) {
-      indicesToRemove.push(...nexts.indices);
-    }
-
-    // Go backwards through the array to preserve earlier indices until we
-    // process them.
-    for (let i = indicesToRemove.length - 1; i >= 0; i--) {
-      const idxToRemove = indicesToRemove[i];
-      const lastIdx = this.data.entity.length - 1;
-      const lastEntity = this.data.entity[lastIdx];
-      this.data.entity[idxToRemove] = this.data.entity[lastIdx];
-      this.data.mass[idxToRemove] = this.data.mass[lastIdx];
-      this.data.cpos[idxToRemove] = this.data.cpos[lastIdx];
-      this.data.ppos[idxToRemove] = this.data.ppos[lastIdx];
-      this.data.acel[idxToRemove] = this.data.acel[lastIdx];
-
-      this.data.entity.pop();
-      this.data.mass.pop();
-      this.data.cpos.pop();
-      this.data.ppos.pop();
-      this.data.acel.pop();
-
-      this.map.set(lastEntity, idx);
-      this.map.delete(eid);
-    }
-
-    this.data.nextData[idx] = { indices: [] };
-  }
 
   mass(handle: ComponentManagerHandle) {
     return this.data.mass[handle.idx];
