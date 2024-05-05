@@ -1,8 +1,3 @@
-// The primary key into the component data. If `destroyed`, then this key is
-
-import { Vector2 } from 'pocket-physics';
-
-// considered dead and components cannot be added or removed.
 export type EntityId = { id: number; owned: boolean; destroyed: boolean };
 
 function entityIdIndex(eid: EntityId) {
@@ -24,10 +19,6 @@ function makeEntity(idx: number, generation: number): EntityId {
 function xassert(value: boolean, debug: unknown) {
   if (!value) throw new Error(`expected true, got false: ${debug}`);
 }
-
-// interface ComponentManager<T> {
-//   get(id: EntityId): T | undefined;
-// }
 
 const ENTITY_INDEX_BITS = 22;
 const ENTITY_INDEX_MASK = (1 << ENTITY_INDEX_BITS) - 1;
@@ -62,16 +53,33 @@ export class EntityManager {
   }
 }
 
-type ComponentManagerHandle = {
-  idx: number;
+export type ComponentInstanceHandle = {
+  storageIdx: number;
+  prev: null | ComponentInstanceHandle;
+  next: null | ComponentInstanceHandle;
 };
+
+/**
+ * Aka an "instance of the component type used to lookup the component data"
+ */
+function makeInstanceHandle(storageIdx: number): ComponentInstanceHandle {
+  return { storageIdx, prev: null, next: null };
+}
 
 export function lookup<T extends ComponentData>(
   man: ComponentManager<T>,
   eid: EntityId,
+): ComponentInstanceHandle | null {
+  const idx = man.map.get(eid);
+  return idx ? idx : null;
+}
+
+export function has<T extends ComponentData>(
+  man: ComponentManager<T>,
+  eid: EntityId,
 ) {
   const idx = man.map.get(eid);
-  return idx ? { idx } : null;
+  return idx ? true : false;
 }
 
 export function addComponent<T extends ComponentData>(
@@ -81,117 +89,191 @@ export function addComponent<T extends ComponentData>(
     [K in keyof T]: T[K][number];
   },
 ) {
-  const idx = man.entities.length || 1;
+  const idx = man.storage.entity.length;
+  man.storage.entity[idx] = eid;
+
   for (let key of Object.keys(init) as (keyof typeof init)[]) {
-    man.data[key][idx] = init[key];
+    man.storage[key][idx] = init[key];
   }
-  man.entities[idx] = eid;
 
   // Allow multiple instances of the component per ID!
-  const existing = man.map.get(eid);
-  if (!existing) {
+  let inst = man.map.get(eid);
+  if (!inst) {
     // This is the first
-    man.map.set(eid, idx);
-    return true;
+    inst = makeInstanceHandle(idx);
+    man.map.set(eid, inst);
   } else {
     // This is not the first
-    console.log('not first', eid, existing);
-    const nexts = man.nextData[existing] ?? { indices: [] };
-    nexts.indices.push(idx);
-    man.nextData[existing] = nexts;
-    console.log('after', man.nextData);
+    let leaf = inst;
+    while (leaf && leaf.next !== null) leaf = leaf.next;
+    leaf.next = makeInstanceHandle(idx);
+    leaf.next.prev = leaf;
   }
+  man.s.added.fire(eid);
 }
 
 export function removeComponent<T extends ComponentData>(
   man: ComponentManager<T>,
   eid: EntityId,
+  instToRemove?: ComponentInstanceHandle | null,
 ) {
-  const idx = man.map.get(eid);
-  if (!idx) return;
+  let inst = man.map.get(eid) ?? null;
+  if (!inst) return;
 
-  const indicesToRemove = [idx];
-  const nexts = man.nextData[idx];
+  const keys = Object.keys(man.storage) as (keyof typeof man.storage)[];
 
-  if (nexts) {
-    indicesToRemove.push(...nexts.indices);
-  }
+  let counter = 0;
 
-  const keys = Object.keys(man.data) as (keyof typeof man.data)[];
+  while (inst) {
+    if (instToRemove ? inst.storageIdx === instToRemove?.storageIdx : true) {
+      // found it, remove it by swapping it with the last storage item and fix up both linked lists!
 
-  // Go backwards through the array to preserve earlier indices until we
-  // process them.
-  for (let i = indicesToRemove.length - 1; i >= 0; i--) {
-    const idxToRemove = indicesToRemove[i];
-    const lastIdx = man.entities.length - 1;
-    const lastEntity = man.entities[lastIdx];
+      // move the last entity to take the place of the to be deleted instance,
+      // and fixup the instance's linked list
+      const lastStorageIdx =
+        man.storage.entity.length === 0 ? 0 : man.storage.entity.length - 1;
+      const replacerEntity = man.storage.entity[lastStorageIdx];
+      if (inst.storageIdx <= man.storage.entity.length - 1) {
+        // only swap if this item is not already at the end!
+        man.storage.entity[inst.storageIdx] = replacerEntity;
+      }
+      man.storage.entity.pop();
+      const replacerInstanceHead = man.map.get(replacerEntity);
+      let replacerInstance = replacerInstanceHead;
+      while (replacerInstance && replacerInstance.storageIdx !== lastStorageIdx)
+        replacerInstance = replacerInstance.next ?? undefined;
+      if (replacerInstance) replacerInstance.storageIdx = inst.storageIdx;
 
-    man.entities[idxToRemove] = man.entities[lastIdx];
-    man.entities.pop();
+      // Move the last storage to be the deleted storage id.
+      for (let k = 0; k < keys.length; k++) {
+        const key = keys[k];
+        if (key === 'entity') continue;
+        man.storage[key][inst.storageIdx] = man.storage[key][lastStorageIdx];
+        man.storage[key].pop();
+      }
 
-    for (let k = 0; k < keys.length; k++) {
-      const key = keys[k];
-      man.data[key][idxToRemove] = man.data[key][lastIdx];
-      man.data[key].pop();
+      const headInstance = man.map.get(eid);
+      if (headInstance?.storageIdx === inst.storageIdx) {
+        // we have just deleted the last instance of this entity, remove this entity as well.
+        man.map.delete(eid);
+      }
     }
-
-    man.map.set(lastEntity, idx);
-    man.map.delete(eid);
+    inst = inst.next;
   }
 
-  man.nextData[idx] = { indices: [] };
+  man.s.removed.fire(eid);
 }
 
-type PointMassComponentData = {
-  mass: number[];
-  cpos: Vector2[];
-  ppos: Vector2[];
-  acel: Vector2[];
-};
+/**
+ * Good for singletons.
+ */
+export function firstComponent<T extends ComponentData>(
+  man: ComponentManager<T>,
+) {
+  return man.storage.entity.at(0);
+}
 
 interface ComponentData extends Record<string, unknown[]> {}
 
-interface ComponentManagerDataLess {
-  map: Map<EntityId, number>;
-  nextData: { indices: number[] }[];
-  entities: EntityId[];
-}
-
-interface ComponentManager<T extends ComponentData>
-  extends ComponentManagerDataLess {
-  data: T;
-}
-
-abstract class ComponentManagerImpl implements ComponentManagerDataLess {
-  // has to be public so that there can be a shared implementation without inheritance!
-  nextData: { indices: number[] }[] = [];
-  entities: EntityId[] = [];
-  map = new Map<EntityId, number>();
-}
-
-export class PointMassComponentMan
-  extends ComponentManagerImpl
-  implements ComponentManager<PointMassComponentData>
-{
-  data: PointMassComponentData = {
-    mass: [],
-    cpos: [],
-    ppos: [],
-    acel: [],
+// TODO: if I remove the generic, and just use `public data: ...`, is that good enough?
+export class ComponentManager<T extends ComponentData = ComponentData> {
+  // implements ComponentManager<T>
+  map = new Map<EntityId, ComponentInstanceHandle>();
+  // nextData: { head: ComponentInstanceHandle | null }[] = [];
+  // entities: EntityId[] = [];
+  s = {
+    added: new Sig<EntityId>(),
+    removed: new Sig<EntityId>(),
+    destroyed: new Sig<void>(),
   };
 
-  mass(handle: ComponentManagerHandle) {
-    return this.data.mass[handle.idx];
+  constructor(
+    layout: T,
+    public storage = {
+      ...layout,
+      entity: [] as EntityId[],
+    },
+  ) {}
+  destroy() {
+    this.s.destroyed.fire();
+  }
+}
+
+class Sig<T> {
+  private owners = new Map<unknown, (it: T) => void>();
+  on(owner: unknown, cb: (it: T) => void) {
+    this.owners.set(owner, cb);
   }
 
-  cpos(handle: ComponentManagerHandle) {
-    return this.data.cpos[handle.idx];
+  off(owner: unknown) {
+    this.owners.delete(owner);
   }
 
-  setCpos(
-    handle: ComponentManagerHandle,
-    value: PointMassComponentData['cpos'][number],
+  fire(it: T) {
+    for (const [owner, cb] of this.owners) cb(it);
+  }
+}
+
+export class Query<
+  T extends ComponentData,
+  Musts extends ComponentManager<T>[],
+  Nots extends ComponentManager<T>[],
+> {
+  entities = new Set<EntityId>();
+
+  constructor(
+    public musts: [...Musts],
+    public nots?: [...Nots],
   ) {
-    return (this.data.cpos[handle.idx] = value);
+    for (const man of musts) {
+      man.s.added.on(this, (eid) => this.check(eid));
+      man.s.removed.on(this, (eid) => this.remove(eid));
+      man.s.destroyed.on(this, () => this.destroy());
+      // Oof, very expensive!
+      for (const e of man.storage.entity) this.check(e);
+    }
+
+    if (nots)
+      for (const man of nots) {
+        man.s.added.on(this, (eid) => this.remove(eid));
+        man.s.removed.on(this, (eid) => this.check(eid));
+        man.s.destroyed.on(this, () => this.destroy());
+        // Oof, very expensive!
+        for (const e of man.storage.entity) this.check(e);
+      }
+  }
+
+  destroy() {
+    for (const man of this.musts) {
+      man.s.added.off(this);
+      man.s.removed.off(this);
+      man.s.destroyed.off(this);
+    }
+  }
+
+  private check(eid: EntityId) {
+    let all = true;
+    for (const man of this.musts) {
+      if (has(man, eid)) continue;
+      else {
+        all = false;
+        break;
+      }
+    }
+
+    if (this.nots)
+      for (const man of this.nots) {
+        if (has(man, eid)) {
+          all = false;
+          break;
+        }
+      }
+
+    if (all) this.entities.add(eid);
+    else this.entities.delete(eid);
+  }
+
+  private remove(eid: EntityId) {
+    this.entities.delete(eid);
   }
 }
