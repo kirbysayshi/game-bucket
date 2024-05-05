@@ -29,6 +29,7 @@ export class EntityManager {
   private generation: number[] = [];
   private freeIndices: number[] = [];
   public MINIMUM_FREE_INDICES = 1024;
+  private men: Set<ComponentManager> = new Set();
 
   create() {
     let idx;
@@ -50,6 +51,17 @@ export class EntityManager {
     const idx = entityIdIndex(eid);
     ++this.generation[idx];
     this.freeIndices.push(idx);
+    eid.destroyed = true;
+    this.men.forEach((man) => removeComponent(man, eid));
+  }
+
+  /**
+   * Technically this is optional, but allows destroying an entity to also clean
+   * up components automatically!
+   */
+  register(...men: ComponentManager[]) {
+    men.forEach((m) => this.men.add(m));
+    return this;
   }
 }
 
@@ -70,7 +82,7 @@ export function lookup<T extends ComponentData>(
   man: ComponentManager<T>,
   eid: EntityId,
 ): ComponentInstanceHandle | null {
-  const idx = man.map.get(eid);
+  const idx = man.heads.get(eid);
   return idx ? idx : null;
 }
 
@@ -78,7 +90,7 @@ export function has<T extends ComponentData>(
   man: ComponentManager<T>,
   eid: EntityId,
 ) {
-  const idx = man.map.get(eid);
+  const idx = man.heads.get(eid);
   return idx ? true : false;
 }
 
@@ -97,11 +109,11 @@ export function addComponent<T extends ComponentData>(
   }
 
   // Allow multiple instances of the component per ID!
-  let inst = man.map.get(eid);
+  let inst = man.heads.get(eid);
   if (!inst) {
     // This is the first
     inst = makeInstanceHandle(idx);
-    man.map.set(eid, inst);
+    man.heads.set(eid, inst);
   } else {
     // This is not the first
     let leaf = inst;
@@ -117,47 +129,65 @@ export function removeComponent<T extends ComponentData>(
   eid: EntityId,
   instToRemove?: ComponentInstanceHandle | null,
 ) {
-  let inst = man.map.get(eid) ?? null;
+  // Grab the storage lookup instance
+  let inst = man.heads.get(eid) ?? null;
   if (!inst) return;
 
-  const keys = Object.keys(man.storage) as (keyof typeof man.storage)[];
+  // Grab the known keys of the storage. Since this is a generic function, we
+  // need to extract them. There are also known keys that we added, so skip those.
+  const keys = Object.keys(man.storage).filter(
+    (k) => k !== 'entity',
+  ) as (keyof typeof man.storage)[];
 
-  let counter = 0;
-
+  // loop through the linked list of instances of this component.
   while (inst) {
+    // if we're looking for a specific instance, only exec the remove for that
+    // instance.
     if (instToRemove ? inst.storageIdx === instToRemove?.storageIdx : true) {
-      // found it, remove it by swapping it with the last storage item and fix up both linked lists!
+      // found it, remove it by swapping it with the last storage item and fix
+      // up both linked lists!
 
-      // move the last entity to take the place of the to be deleted instance,
-      // and fixup the instance's linked list
+      // STEP 1: move the last entity (e.g. "the replacer") to take the place of
+      // the to-be-deleted instance, and fixup the instance's linked list
       const lastStorageIdx =
         man.storage.entity.length === 0 ? 0 : man.storage.entity.length - 1;
       const replacerEntity = man.storage.entity[lastStorageIdx];
+      // SPECIAL CASE: only swap if this item is not already at the end and
+      // there is space to swap!
       if (inst.storageIdx <= man.storage.entity.length - 1) {
-        // only swap if this item is not already at the end!
         man.storage.entity[inst.storageIdx] = replacerEntity;
       }
+      // remove the original, which is now a duplicate.
       man.storage.entity.pop();
-      const replacerInstanceHead = man.map.get(replacerEntity);
+
+      // STEP 2: fixup the linked list of instances so that their storageIdx is
+      // accurate after being moved.
+      const replacerInstanceHead = man.heads.get(replacerEntity);
+      // find the instance that we just affected by the swap.
       let replacerInstance = replacerInstanceHead;
       while (replacerInstance && replacerInstance.storageIdx !== lastStorageIdx)
         replacerInstance = replacerInstance.next ?? undefined;
+      // update the affected instance's storage to be the recently deleted's
+      // storage.
       if (replacerInstance) replacerInstance.storageIdx = inst.storageIdx;
 
-      // Move the last storage to be the deleted storage id.
+      // STEP 3: Actually move the storage location of the Replacer to be the
+      // recently-deleted's location.
       for (let k = 0; k < keys.length; k++) {
         const key = keys[k];
-        if (key === 'entity') continue;
         man.storage[key][inst.storageIdx] = man.storage[key][lastStorageIdx];
         man.storage[key].pop();
       }
 
-      const headInstance = man.map.get(eid);
-      if (headInstance?.storageIdx === inst.storageIdx) {
-        // we have just deleted the last instance of this entity, remove this entity as well.
-        man.map.delete(eid);
+      // STEP 4: Check if there are no more instances for the EntityId. If so,
+      // forget the EntityId.
+      const headInstance = man.heads.get(eid);
+      if (headInstance?.storageIdx === inst.storageIdx && !headInstance.next) {
+        man.heads.delete(eid);
       }
     }
+
+    // continue to search for instances that need to be removed.
     inst = inst.next;
   }
 
@@ -177,10 +207,10 @@ interface ComponentData extends Record<string, unknown[]> {}
 
 // TODO: if I remove the generic, and just use `public data: ...`, is that good enough?
 export class ComponentManager<T extends ComponentData = ComponentData> {
-  // implements ComponentManager<T>
-  map = new Map<EntityId, ComponentInstanceHandle>();
-  // nextData: { head: ComponentInstanceHandle | null }[] = [];
-  // entities: EntityId[] = [];
+  // Returns the _head_ of the linked list of instances for an EntityId
+  heads = new Map<EntityId, ComponentInstanceHandle>();
+
+  // signals for external coordination
   s = {
     added: new Sig<EntityId>(),
     removed: new Sig<EntityId>(),

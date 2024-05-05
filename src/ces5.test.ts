@@ -65,8 +65,9 @@ test('entity create', async () => {
 });
 
 test('multiple same-type components per entity', () => {
-  const eman = new EntityManager();
   const pointman = new PointMassComponentMan();
+  const eman = new EntityManager();
+  eman.register(pointman);
 
   const e0 = eman.create();
 
@@ -138,11 +139,12 @@ test('multiple same-type components per entity', () => {
 });
 
 test('entity query', () => {
-  const eman = new EntityManager();
   const man1 = new ComponentManager<{ mass1: number[] }>({ mass1: [] });
   const man2 = new ComponentManager<{ mass2: number[] }>({ mass2: [] });
   const man3 = new ComponentManager<{ mass3: number[] }>({ mass3: [] });
   const man4 = new ComponentManager<{ mass4: number[] }>({ mass4: [] });
+  const eman = new EntityManager();
+  eman.register(man1, man2, man3, man4);
 
   const e0 = eman.create();
   const e1 = eman.create();
