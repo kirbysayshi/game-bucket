@@ -16,15 +16,6 @@ export class PointMassComponentMan extends ComponentManager<{
   ppos: Vector2[];
   acel: Vector2[];
 }> {
-  constructor() {
-    super({
-      mass: [],
-      cpos: [],
-      ppos: [],
-      acel: [],
-    });
-  }
-
   // Example of retrieving all by entity id. Multiple component instances is a
   // rare case, most likely getting the first handle via `lookup` will suffice.
   masses(eid: EntityId) {
@@ -41,16 +32,16 @@ export class PointMassComponentMan extends ComponentManager<{
   // example of accepting a handle to read the data without manual indexing.
   mass(handle: ComponentInstanceHandle | null) {
     if (!handle) return;
-    return this.storage.mass[handle.storageIdx];
+    return this.storage.mass?.[handle.storageIdx];
   }
 
   cpos(handle: ComponentInstanceHandle | null) {
     if (!handle) return;
-    return this.storage.cpos[handle.storageIdx];
+    return this.storage.cpos?.[handle.storageIdx];
   }
 
   setCpos(handle: ComponentInstanceHandle | null, value: Vector2) {
-    if (!handle) return;
+    if (!handle || !this.storage.cpos) return;
     return (this.storage.cpos[handle.storageIdx] = value);
   }
 }
@@ -62,6 +53,29 @@ test('entity create', async () => {
       eman.create();
     }
   }).toThrowErrorMatchingInlineSnapshot(`"expected true, got false: 4194304"`);
+});
+
+test('remove head component', () => {
+  const man1 = new ComponentManager<{ mass1: number[] }>();
+  const eman = new EntityManager();
+
+  const e0 = eman.create();
+  addComponent(man1, e0, { mass1: 1 });
+  addComponent(man1, e0, { mass1: 2 });
+
+  const head = lookup(man1, e0);
+  expect(head?.storageIdx).toBe(0);
+  expect(head?.next?.storageIdx).toBe(1);
+
+  console.dir(man1, { depth: 999 });
+
+  removeComponent(man1, e0, head);
+
+  console.dir(man1, { depth: 999 });
+
+  const newHead = lookup(man1, e0);
+  expect(newHead?.storageIdx).toBe(0);
+  expect(newHead?.next).toBe(null);
 });
 
 test('multiple same-type components per entity', () => {
@@ -92,13 +106,13 @@ test('multiple same-type components per entity', () => {
     mass: 2,
   });
 
-  expect(pointman.storage.entity[0]).toBe(e0);
-  expect(pointman.storage.entity[1]).toBe(e0);
-  expect(pointman.storage.entity[2]).toBe(e0);
+  expect(pointman.entityStorage[0]).toBe(e0);
+  expect(pointman.entityStorage[1]).toBe(e0);
+  expect(pointman.entityStorage[2]).toBe(e0);
 
-  expect(pointman.storage.mass[0]).toBe(0);
-  expect(pointman.storage.mass[1]).toBe(1);
-  expect(pointman.storage.mass[2]).toBe(2);
+  expect(pointman.storage.mass![0]).toBe(0);
+  expect(pointman.storage.mass![1]).toBe(1);
+  expect(pointman.storage.mass![2]).toBe(2);
 
   expect(lookup(pointman, e0)?.storageIdx).toBe(0);
   expect(lookup(pointman, e0)?.next?.storageIdx).toBe(1);
@@ -125,11 +139,9 @@ test('multiple same-type components per entity', () => {
   pointman.setCpos(h, v2(1, 1));
   expect(pointman.cpos(h)).toStrictEqual(v2(1, 1));
 
-  // console.dir(pointman, { depth: 999 });
-
   removeComponent(pointman, e0);
 
-  expect(pointman.storage.entity[0]).toBe(e1);
+  expect(pointman.entityStorage[0]).toBe(e1);
   expect(lookup(pointman, e1)?.storageIdx).toBe(1);
   expect(lookup(pointman, e1)?.next?.storageIdx).toBe(0);
   expect(lookup(pointman, e0)).toBeNull();
@@ -139,10 +151,10 @@ test('multiple same-type components per entity', () => {
 });
 
 test('entity query', () => {
-  const man1 = new ComponentManager<{ mass1: number[] }>({ mass1: [] });
-  const man2 = new ComponentManager<{ mass2: number[] }>({ mass2: [] });
-  const man3 = new ComponentManager<{ mass3: number[] }>({ mass3: [] });
-  const man4 = new ComponentManager<{ mass4: number[] }>({ mass4: [] });
+  const man1 = new ComponentManager<{ mass1: number[] }>();
+  const man2 = new ComponentManager<{ mass2: number[] }>();
+  const man3 = new ComponentManager<{ mass3: number[] }>();
+  const man4 = new ComponentManager<{ mass4: number[] }>();
   const eman = new EntityManager();
   eman.register(man1, man2, man3, man4);
 
@@ -176,13 +188,13 @@ test('entity query', () => {
 });
 
 test('tags', () => {
-  const tag1 = new ComponentManager({});
+  const tag1 = new ComponentManager();
 });
 
 test('one component managing multiple instances', () => {
   // multiple masses don't make sense but are easy to test
   const eman = new EntityManager();
-  const man = new ComponentManager<{ mass: number[][] }>({ mass: [] });
+  const man = new ComponentManager<{ mass: number[][] }>();
   const e0 = eman.create();
   addComponent(man, e0, { mass: [1, 2] });
   expect(lookup(man, e0)).toMatchInlineSnapshot(`
@@ -196,8 +208,8 @@ test('one component managing multiple instances', () => {
 
 test('not query', () => {
   const eman = new EntityManager();
-  const man1 = new ComponentManager<{ mass1: number[] }>({ mass1: [] });
-  const man2 = new ComponentManager<{ mass2: number[] }>({ mass2: [] });
+  const man1 = new ComponentManager<{ mass1: number[] }>();
+  const man2 = new ComponentManager<{ mass2: number[] }>();
 
   const e0 = eman.create();
   const e1 = eman.create();
