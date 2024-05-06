@@ -1,12 +1,17 @@
 import { Vector2, v2 } from 'pocket-physics';
 import {
+  AsComponentData,
   ComponentInstanceHandle,
   ComponentManager,
   EntityId,
   EntityManager,
   Query,
   addComponent,
+  borrowEntityId,
+  createEntity,
+  destroyEntity,
   lookup,
+  registerComponentMan,
   removeComponent,
 } from './ces5';
 
@@ -50,7 +55,7 @@ test('entity create', async () => {
   const eman = new EntityManager();
   expect(() => {
     while (true) {
-      eman.create();
+      createEntity(eman);
     }
   }).toThrowErrorMatchingInlineSnapshot(`"expected true, got false: 4194304"`);
 });
@@ -59,7 +64,7 @@ test('remove head component', () => {
   const man1 = new ComponentManager<{ mass1: number[] }>();
   const eman = new EntityManager();
 
-  const e0 = eman.create();
+  const e0 = createEntity(eman);
   addComponent(man1, e0, { mass1: 1 });
   addComponent(man1, e0, { mass1: 2 });
 
@@ -67,11 +72,11 @@ test('remove head component', () => {
   expect(head?.storageIdx).toBe(0);
   expect(head?.next?.storageIdx).toBe(1);
 
-  console.dir(man1, { depth: 999 });
+  // console.dir(man1, { depth: 999 });
 
-  removeComponent(man1, e0, head);
+  removeComponent(man1, eman, e0, head);
 
-  console.dir(man1, { depth: 999 });
+  // console.dir(man1, { depth: 999 });
 
   const newHead = lookup(man1, e0);
   expect(newHead?.storageIdx).toBe(0);
@@ -81,9 +86,9 @@ test('remove head component', () => {
 test('multiple same-type components per entity', () => {
   const pointman = new PointMassComponentMan();
   const eman = new EntityManager();
-  eman.register(pointman);
+  registerComponentMan(eman, pointman);
 
-  const e0 = eman.create();
+  const e0 = createEntity(eman);
 
   addComponent(pointman, e0, {
     acel: v2(),
@@ -118,7 +123,7 @@ test('multiple same-type components per entity', () => {
   expect(lookup(pointman, e0)?.next?.storageIdx).toBe(1);
   expect(lookup(pointman, e0)?.next?.next?.storageIdx).toBe(2);
 
-  const e1 = eman.create();
+  const e1 = createEntity(eman);
   addComponent(pointman, e1, {
     acel: v2(1, 1),
     ppos: v2(1, 1),
@@ -139,7 +144,7 @@ test('multiple same-type components per entity', () => {
   pointman.setCpos(h, v2(1, 1));
   expect(pointman.cpos(h)).toStrictEqual(v2(1, 1));
 
-  removeComponent(pointman, e0);
+  removeComponent(pointman, eman, e0);
 
   expect(pointman.entityStorage[0]).toBe(e1);
   expect(lookup(pointman, e1)?.storageIdx).toBe(1);
@@ -156,10 +161,10 @@ test('entity query', () => {
   const man3 = new ComponentManager<{ mass3: number[] }>();
   const man4 = new ComponentManager<{ mass4: number[] }>();
   const eman = new EntityManager();
-  eman.register(man1, man2, man3, man4);
+  registerComponentMan(eman, man1, man2, man3, man4);
 
-  const e0 = eman.create();
-  const e1 = eman.create();
+  const e0 = createEntity(eman);
+  const e1 = createEntity(eman);
 
   addComponent(man1, e0, { mass1: 1 });
   addComponent(man2, e0, { mass2: 2 });
@@ -178,12 +183,12 @@ test('entity query', () => {
   expect(q3.entities.size).toBe(1);
   expect(q4.entities.size).toBe(0);
 
-  const e2 = eman.create();
+  const e2 = createEntity(eman);
   addComponent(man4, e2, { mass4: 4 });
 
   expect(q4.entities.size).toBe(1);
 
-  removeComponent(man1, e0);
+  removeComponent(man1, eman, e0);
   expect(q1.entities.size).toBe(0);
 });
 
@@ -195,7 +200,7 @@ test('one component managing multiple instances', () => {
   // multiple masses don't make sense but are easy to test
   const eman = new EntityManager();
   const man = new ComponentManager<{ mass: number[][] }>();
-  const e0 = eman.create();
+  const e0 = createEntity(eman);
   addComponent(man, e0, { mass: [1, 2] });
   expect(lookup(man, e0)).toMatchInlineSnapshot(`
     {
@@ -211,8 +216,8 @@ test('not query', () => {
   const man1 = new ComponentManager<{ mass1: number[] }>();
   const man2 = new ComponentManager<{ mass2: number[] }>();
 
-  const e0 = eman.create();
-  const e1 = eman.create();
+  const e0 = createEntity(eman);
+  const e1 = createEntity(eman);
 
   addComponent(man1, e0, { mass1: 0 });
   addComponent(man1, e1, { mass1: 1 });
@@ -227,4 +232,66 @@ test('not query', () => {
 
   expect(q1.entities.size).toBe(1);
   expect(q2.entities.size).toBe(1);
+});
+
+test('handle is null when all components removed', () => {
+  const eman = new EntityManager();
+  const man1 = new ComponentManager<{ mass1: number[] }>();
+
+  const e0 = createEntity(eman);
+  addComponent(man1, e0, { mass1: 0 });
+  removeComponent(man1, eman, e0);
+  expect(lookup(man1, e0)).toBeNull();
+});
+
+test('handle is null when entity destroyed', () => {
+  const eman = new EntityManager();
+  const man1 = new ComponentManager<{ mass1: number[] }>();
+  registerComponentMan(eman, man1);
+
+  const e0 = createEntity(eman);
+  addComponent(man1, e0, { mass1: 0 });
+  destroyEntity(eman, e0);
+  expect(lookup(man1, e0)).toBeNull();
+});
+
+test('borrowed is not destroyed', () => {
+  const eman = new EntityManager();
+  type Rocket = { fuel: number };
+
+  const man1 = new ComponentManager<{ mass1: number[]; rocket: EntityId[] }>();
+  const man2 = new ComponentManager<AsComponentData<Rocket>>();
+  registerComponentMan(eman, man1, man2);
+
+  const e0 = createEntity(eman);
+  const e1 = createEntity(eman);
+  addComponent(man1, e0, { mass1: 0, rocket: borrowEntityId(e1) });
+  addComponent(man2, e1, { fuel: 100 });
+
+  removeComponent(man1, eman, e0);
+
+  const h = lookup(man2, e1);
+  expect(h).toBeTruthy();
+  if (!h) return;
+  expect(man2.storage.fuel?.[h.storageIdx]).toBe(100);
+});
+
+test('owned is destroyed', () => {
+  const eman = new EntityManager();
+  type Rocket = { fuel: number };
+
+  const man1 = new ComponentManager<{ mass1: number[]; rocket: EntityId[] }>();
+  const man2 = new ComponentManager<AsComponentData<Rocket>>();
+  registerComponentMan(eman, man1, man2);
+
+  const e0 = createEntity(eman);
+  const e1 = createEntity(eman);
+  addComponent(man1, e0, { mass1: 0, rocket: e1 });
+  addComponent(man2, e1, { fuel: 100 });
+
+  removeComponent(man1, eman, e0);
+
+  const h = lookup(man2, e1);
+  expect(h).toBeFalsy();
+  expect(man2.storage.fuel?.[h?.storageIdx ?? -1]).toBe(undefined);
 });
