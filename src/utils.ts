@@ -14,3 +14,7 @@ export function assertDefinedFatal<T>(
     );
   }
 }
+
+export const assertExhaustive = (_n: never): void => {
+  throw new Error('Unreachable');
+};

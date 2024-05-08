@@ -5,6 +5,11 @@ set -e
 
 yarn clean
 
+# Generate latest sprite data
+yarn atlas
+
+# TODO: consider optimizing aseprite-json by shortening names.
+
 # build with rollup
 NODE_ENV=production yarn build
 

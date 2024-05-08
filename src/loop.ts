@@ -76,7 +76,10 @@ export const createGameLoop = ({
     }
 
     if (shouldDraw) {
-      drawAccumulator -= drawMs;
+      // Drain the drawAccumulator. If the drawMs is mearly subtracted, the
+      // accumulator can "fill up" with partial/remainder draw durations and then the draw starts
+      // firing on every frame rather than at the requested rate.
+      drawAccumulator = 0;
       // pass update-based interpolation factor for smooth animations
       draw(1 - (updateMs - updateAccumulator) / updateMs, drawMs);
       framesThisSecond += 1;

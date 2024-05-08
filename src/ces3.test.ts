@@ -23,6 +23,11 @@ type C3 = {
   b: AssuredBorrowedEntityId<C2>;
 };
 
+type C4 = {
+  k: 'c4';
+  p2: boolean;
+};
+
 // https://2ality.com/2019/07/testing-static-types.html
 type AssertIs<T, Expected> = T extends Expected
   ? Expected extends T
@@ -111,8 +116,18 @@ test('ces3 recursive deletion', () => {
   ces.destroy(e3);
   expect(e3.destroyed).toBe(true);
   ces.flushDestruction();
-  expect(ces.has(e3, 'c3')).toBe(false);
+  expect(ces.has(e3, 'c3')).toBe(null);
   expect(ces.isDestroyed(e3)).toBe(true);
   expect(ces.data(e0, 'c1')).toBe(undefined);
-  expect(ces.isDestroyed(e1)).toBe(false);
+});
+
+test('ces3 selection: no interesection produces zero results', () => {
+  const ces = new CES3<C1 | C2 | C4>();
+
+  const e0 = ces.entity([{ k: 'c1', p1: 0 }]);
+  const e1 = ces.entity([{ k: 'c2', p2: 'x' }]);
+  const e2 = ces.entity([{ k: 'c4', p2: true }]);
+
+  const result = ces.select(['c1', 'c2', 'c4']);
+  expect(result.size).toBe(0);
 });

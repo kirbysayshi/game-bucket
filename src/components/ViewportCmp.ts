@@ -1,29 +1,23 @@
 import { add, copy, scale, v2, Vector2 } from 'pocket-physics';
-import { DPRCanvas, makeDPRCanvas } from './canvas';
-import { usePrimaryCanvas, useRootElement } from './dom';
-import { BlackRGBA, BodyTextFont, TitleTextFont, YellowRGBA } from './theme';
-import { useCES } from './use-ces';
+import { DPRCanvas, makeDPRCanvas } from '../canvas';
+import { usePrimaryCanvas, useRootElement } from '../dom';
+import { CES3C } from '../initialize-ces';
+import { BlackRGBA, BodyTextFont, TitleTextFont, YellowRGBA } from '../theme';
 
 type Pixels = number & { _isPixels: true };
+export function asPixels(n: number) {
+  return n as Pixels;
+}
 
 export type ViewportUnits<T = number> = T & { _isViewportUnits: true };
 export function asViewportUnits(n: number) {
   return n as ViewportUnits;
 }
-export type ViewportUnitVector2 = {
-  x: ViewportUnits;
-  y: ViewportUnits;
-};
+export type ViewportUnitVector2 = Vector2<ViewportUnits>;
 
 export function vv2(x: number = 0, y: number = 0) {
   return v2(x, y) as ViewportUnitVector2;
 }
-
-export type IntegratableVU = {
-  cpos: ViewportUnitVector2;
-  ppos: ViewportUnitVector2;
-  acel: ViewportUnitVector2;
-};
 
 type Camera = {
   // if mode === center, helf width offset from center
@@ -44,9 +38,13 @@ export type ViewportCmp = {
   camera: Camera;
 };
 
-function toPixelUnitsVec(out: Vector2, v: ViewportUnitVector2) {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
+function toPixelUnitsVec(
+  out: Vector2,
+  vp: ViewportCmp,
+  v: ViewportUnitVector2
+) {
+  // const ces = useCES();
+  // const vp = ces.selectFirstData('viewport')!;
   const cvs = vp.dprCanvas;
 
   scale(out, v, 1 / vp.vpWidth);
@@ -59,9 +57,7 @@ function toPixelUnitsVec(out: Vector2, v: ViewportUnitVector2) {
 }
 
 // Ignore the camera's position when computing pixel values (for relative use only)
-export function toPixelUnits(n: ViewportUnits) {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
+export function toPixelUnits(vp: ViewportCmp, n: ViewportUnits) {
   const cvs = vp.dprCanvas;
 
   // This causes jittering...
@@ -71,32 +67,27 @@ export function toPixelUnits(n: ViewportUnits) {
 }
 
 // Account for the camera position when computing pixel values
-export function toProjectedPixels(n: ViewportUnits, axis: 'x' | 'y') {
-  // TODO: perhaps make this a method on camera instead to avoid so many lookups.
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
+export function toProjectedPixels(
+  vp: ViewportCmp,
+  n: ViewportUnits,
+  axis: 'x' | 'y'
+) {
   const { camera } = vp;
   return toPixelUnits(
+    vp,
     (n - (axis === 'x' ? camera.target.x : camera.target.y)) as ViewportUnits
   );
 }
 
-export const toViewportUnits = (n: number): ViewportUnits => {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport');
-  if (process.env.NODE_ENV !== 'production') {
-    if (!vp)
-      throw new Error(
-        'tried to compute pixel units without a viewport defined!'
-      );
-  }
+export const toViewportUnits = (vp: ViewportCmp, n: number): ViewportUnits => {
   const units = (n / vp!.dprCanvas.width) * 100;
   return units as ViewportUnits;
 };
 
-export function moveViewportCamera(toPos: ViewportUnitVector2) {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
+export function moveViewportCamera(
+  vp: ViewportCmp,
+  toPos: ViewportUnitVector2
+) {
   copy(vp.camera.target, toPos);
 }
 
@@ -105,14 +96,12 @@ export function restoreNativeCanvasDrawing(vp: ViewportCmp) {
   const { camera } = vp;
   ctx.scale(1, -1);
   ctx.translate(
-    -toPixelUnits(camera.frustrum.x),
-    -toPixelUnits(camera.frustrum.y)
+    -toPixelUnits(vp, camera.frustrum.x),
+    -toPixelUnits(vp, camera.frustrum.y)
   );
 }
 
-export function clearScreen() {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
+export function clearScreen(vp: ViewportCmp) {
   const { ctx } = vp.dprCanvas;
   ctx.save();
   restoreNativeCanvasDrawing(vp);
@@ -120,9 +109,10 @@ export function clearScreen() {
   ctx.restore();
 }
 
-export function fillBeyondCamera(color: BlackRGBA = BlackRGBA) {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
+export function fillBeyondCamera(
+  vp: ViewportCmp,
+  color: BlackRGBA = BlackRGBA
+) {
   const { ctx } = vp.dprCanvas;
   ctx.fillStyle = color;
 
@@ -131,19 +121,22 @@ export function fillBeyondCamera(color: BlackRGBA = BlackRGBA) {
 
   ctx.fillRect(
     toProjectedPixels(
+      vp,
       (vp.camera.target.x - vp.camera.frustrum.x) as ViewportUnits,
       'x'
     ),
     toProjectedPixels(
+      vp,
       (vp.camera.target.y - vp.camera.frustrum.y) as ViewportUnits,
       'y'
     ),
-    toPixelUnits(remainingX),
-    toPixelUnits(-remainingY as ViewportUnits)
+    toPixelUnits(vp, remainingX),
+    toPixelUnits(vp, -remainingY as ViewportUnits)
   );
 }
 
 export function drawTextLinesInViewport(
+  vp: ViewportCmp,
   text: string,
   start: ViewportUnitVector2,
   alignment: 'center' | 'left' | 'right',
@@ -152,8 +145,6 @@ export function drawTextLinesInViewport(
   bgcolor: YellowRGBA | BlackRGBA | 'transparent' = 'transparent',
   fontName: TitleTextFont | BodyTextFont = BodyTextFont
 ): ViewportUnits {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
   const { camera } = vp;
 
   // translate "relative" viewport position to world coordinates
@@ -163,6 +154,7 @@ export function drawTextLinesInViewport(
   add(corrected, corrected, start);
 
   return drawTextLinesInWorld(
+    vp,
     text,
     corrected,
     alignment,
@@ -174,6 +166,7 @@ export function drawTextLinesInViewport(
 }
 
 export function drawTextLinesInWorld(
+  vp: ViewportCmp,
   text: string,
   start: ViewportUnitVector2,
   alignment: 'center' | 'left' | 'right',
@@ -182,8 +175,6 @@ export function drawTextLinesInWorld(
   bgcolor: YellowRGBA | BlackRGBA | 'transparent' = 'transparent',
   fontName: TitleTextFont | BodyTextFont = BodyTextFont
 ): ViewportUnits {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
   const { camera } = vp;
   const { ctx } = vp.dprCanvas;
   ctx.save();
@@ -192,9 +183,10 @@ export function drawTextLinesInWorld(
   ctx.scale(1, -1);
 
   const toReverseYProjected = (n: ViewportUnits) =>
-    toPixelUnits((n + camera.target.y) as ViewportUnits);
+    toPixelUnits(vp, (n + camera.target.y) as ViewportUnits);
 
   const { predictedSingleLineHeight, font } = predictTextHeight(
+    vp,
     text,
     maxLinesPerCanvas,
     fontName
@@ -209,7 +201,7 @@ export function drawTextLinesInWorld(
     const measure = ctx.measureText(line);
     const width = measure.width + 1;
 
-    const height: Pixels = toPixelUnits(predictedSingleLineHeight);
+    const height: Pixels = toPixelUnits(vp, predictedSingleLineHeight);
 
     if (i === 0) {
       // fillText draws 0,0 using the baseline, which means 0,0 will be off
@@ -220,10 +212,10 @@ export function drawTextLinesInWorld(
 
     const x =
       alignment === 'center'
-        ? toProjectedPixels(start.x, 'x') - width / 2
+        ? toProjectedPixels(vp, start.x, 'x') - width / 2
         : alignment === 'left'
-        ? toProjectedPixels(start.x, 'x')
-        : toProjectedPixels(start.x, 'x') - width;
+        ? toProjectedPixels(vp, start.x, 'x')
+        : toProjectedPixels(vp, start.x, 'x') - width;
 
     // TODO: add a padding?
     if (bgcolor !== 'transparent') {
@@ -240,16 +232,15 @@ export function drawTextLinesInWorld(
 
   ctx.restore();
 
-  return toViewportUnits(totalHeight);
+  return toViewportUnits(vp, totalHeight);
 }
 
 export function predictTextHeight(
+  vp: ViewportCmp,
   text: string,
   maxLinesPerCanvas: number,
   fontName: TitleTextFont | BodyTextFont = BodyTextFont
 ) {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
   const { ctx } = vp.dprCanvas;
   const textSize = vp.height / maxLinesPerCanvas;
 
@@ -278,52 +269,128 @@ export function predictTextHeight(
   return {
     font,
     fontSize: `${textSize}px`,
-    total: toViewportUnits(heightWithLineHeight * lines.length),
+    total: toViewportUnits(vp, heightWithLineHeight * lines.length),
     cssLineHeight: lineHeight,
-    predictedSingleLineHeight: toViewportUnits(heightWithLineHeight),
+    predictedSingleLineHeight: toViewportUnits(vp, heightWithLineHeight),
   };
 }
 
-export function drawAsset(
-  asset: HTMLImageElement,
+export function drawSheetAssetPx(
+  vp: ViewportCmp,
+  source: HTMLImageElement,
   interp: number,
-  cpos: Vector2,
-  ppos: Vector2,
-  width: ViewportUnits,
-  height: ViewportUnits = width,
-  center = false
+  cpos: ViewportUnitVector2, // should these be pixels too???
+  ppos: ViewportUnitVector2,
+  // source: the slice within the sprite sheet atlas
+  sourceX: number,
+  sourceY: number,
+  sourceW: number,
+  sourceH: number,
+  // the offset of the trimmed slice relative to the original single sprite. aka
+  // spriteSourceSize.x/y. If the sprite is not trimmed, these will be zero.
+  frameXCorrection: Pixels = asPixels(0),
+  frameYCorrection: Pixels = asPixels(0),
+  // the size of the original single sprite. If the sprite is not trimmed, these
+  // will be the same as the slice size.
+  frameWidth: Pixels = asPixels(sourceW),
+  frameHeight: Pixels = asPixels(sourceH),
+
+  // whether to center the sprite at cpos/ppos
+  center = false,
+  scaleX = vp.dprCanvas.dpr,
+  scaleY = vp.dprCanvas.dpr
 ) {
-  const ces = useCES();
-  const vp = ces.selectFirstData('viewport')!;
   const { ctx } = vp.dprCanvas;
 
   const x = toProjectedPixels(
+    vp,
     asViewportUnits(ppos.x + interp * (cpos.x - ppos.x)),
     'x'
   );
   const y = toProjectedPixels(
+    vp,
     asViewportUnits(ppos.y + interp * (cpos.y - ppos.y)),
     'y'
   );
 
-  const pxWidth = toPixelUnits(width);
-  const pxHeight = toPixelUnits(height);
+  const pxCenterWidth = frameWidth * scaleX;
+  const pxCenterHeight = frameHeight * scaleY;
 
+  const offsetX = frameXCorrection * scaleX;
+  const offsetY = frameYCorrection * scaleY;
+
+  // We are going to flip the coordinate system again to ensure the image is in
+  // the correct orientation. Therefore, +y becomes "down" again.
+  const destX = (center ? x - pxCenterWidth / 2 : x) + offsetX;
+  const destY = (center ? y + pxCenterHeight / 2 : y) - offsetY;
+
+  // TODO: save+restore for every sprite... oof.
   ctx.save();
+  ctx.translate(destX, destY);
   ctx.scale(1, -1);
-
   ctx.drawImage(
-    asset,
+    source,
+    sourceX,
+    sourceY,
+    sourceW,
+    sourceH,
     0,
     0,
-    asset.width,
-    asset.height,
-    center ? x - pxWidth / 2 : x,
-    center ? y - pxHeight / 2 : y,
-    pxWidth,
-    pxHeight
+    sourceW * scaleX,
+    sourceH * scaleY
   );
   ctx.restore();
+}
+
+export function drawSheetAssetVp(
+  vp: ViewportCmp,
+  source: HTMLImageElement,
+  interp: number,
+  cpos: ViewportUnitVector2, // should these be pixels too???
+  ppos: ViewportUnitVector2,
+  // source: the slice within the sprite sheet atlas
+  sourceX: number,
+  sourceY: number,
+  sourceW: number,
+  sourceH: number,
+  // the offset of the trimmed slice relative to the original single sprite. aka
+  // spriteSourceSize.x/y. If the sprite is not trimmed, these will be zero.
+  frameXCorrection: Pixels = asPixels(0),
+  frameYCorrection: Pixels = asPixels(0),
+  // the size of the original single sprite. If the sprite is not trimmed, these
+  // will be the same as the slice size.
+  frameWidth: Pixels = asPixels(sourceW),
+  frameHeight: Pixels = asPixels(sourceH),
+
+  // whether to center the sprite at cpos/ppos
+  center = false,
+
+  destWidth: ViewportUnits = asViewportUnits(sourceW),
+  destHeight: ViewportUnits = asViewportUnits((sourceH / sourceW) * destWidth)
+) {
+  const destWidthPx = toPixelUnits(vp, destWidth);
+  const destHeightPx = toPixelUnits(vp, destHeight);
+  const scaleX = destWidthPx / frameWidth;
+  const scaleY = destHeightPx / frameHeight;
+
+  drawSheetAssetPx(
+    vp,
+    source,
+    interp,
+    cpos,
+    ppos,
+    sourceX,
+    sourceY,
+    sourceW,
+    sourceH,
+    frameXCorrection,
+    frameYCorrection,
+    frameWidth,
+    frameHeight,
+    center,
+    scaleX,
+    scaleY
+  );
 }
 
 export function deriveViewportCmp(frustrum = vv2(50, 50)): ViewportCmp {
@@ -362,16 +429,18 @@ export function deriveViewportCmp(frustrum = vv2(50, 50)): ViewportCmp {
   };
 }
 
-export function computeWindowResize() {
+export function computeWindowResize(ces: CES3C) {
   const cmp = deriveViewportCmp();
-  const ces = useCES();
 
   // On resize, destroy existing component and depdendent components.
-  const q = ces.createQuery(['viewport']);
-  const existingId = ces.selectFirst(q);
+  const existingId = ces.selectFirst(['viewport']);
   if (existingId) {
     ces.destroy(existingId);
   }
+
+  // TODO: consider hand-rolling a ctx.save/restore that only manages the
+  // transform using .getTransform and .setTransform. Lots of perf time taken up
+  // by .save/restore() currently.
 
   const root = useRootElement();
   root.style.width = cmp.width + 'px';
@@ -390,4 +459,6 @@ export function computeWindowResize() {
   ces.entity(def);
 }
 
-window.addEventListener('resize', computeWindowResize);
+export function initializeResize(ces: CES3C) {
+  window.addEventListener('resize', () => computeWindowResize(ces));
+}

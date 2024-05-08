@@ -28,27 +28,6 @@ function isBorrowedEntityId(obj: any): obj is BorrowedEntityId {
   return id && obj.owned === false;
 }
 
-export type NarrowComponent<T, N> = T extends { k: N } ? T : never;
-export type AssuredEntityId<ED extends EntityData> = EntityId & {
-  _assured: ED;
-};
-export type AssuredBorrowedEntityId<ED extends EntityData> =
-  BorrowedEntityId & {
-    _assured: ED;
-  };
-
-/**
- * Take an entity id with multiple data types, like v-movement | something-else,
- * and narrow it to just K. Useful when assigning an entityId to a function
- * signature or other type.
- */
-export function narrowAssuredEntityId<C extends EntityData, K extends C['k']>(
-  eid: AssuredEntityId<C>,
-  k: K
-) {
-  return eid as AssuredEntityId<NarrowComponent<C, typeof k>>;
-}
-
 export function borrowEntityId(id: EntityId) {
   const next: BorrowedEntityId = { ...id, owned: false };
   return next;
@@ -59,6 +38,50 @@ export function borrowAssuredEntityId<C extends EntityData>(
 ) {
   const next: AssuredBorrowedEntityId<C> = { ...id, owned: false };
   return next;
+}
+
+export type NarrowComponent<T, K> = T extends { k: K } ? T : never;
+
+// TODO: AssuredEntityId<A|B> is not allowed to be passed to a function that
+// only has AssuredEntityId<A>. This is annoying and makes the types less
+// helpful. How to solve? Should the assured tags be actually specified on the
+// Id during runtime?
+
+export type AssuredEntityId<ED extends EntityData> = EntityId & {
+  _assured: ED;
+};
+
+export type AssuredBorrowedEntityId<ED extends EntityData> =
+  BorrowedEntityId & {
+    _assured: ED;
+  };
+
+/**
+ * Extract the EntityId type from a known selection
+ */
+export type SelectionEntityId<T> = T extends Set<infer I> ? I : never;
+
+/**
+ * Take an entity id with multiple data types, like v-movement | something-else,
+ * and narrow it to just K. Useful when assigning an entityId to a function
+ * signature or other type.
+ */
+export function narrowAssuredEntityId<
+  C extends EntityData,
+  K extends C['k'] = C['k']
+>(eid: AssuredEntityId<C>, k: K) {
+  return eid as AssuredEntityId<NarrowComponent<C, typeof k>>;
+}
+
+type InnerType<T> = T extends AssuredEntityId<infer C> ? C : never;
+
+// Unfortunately this allows assigning (C1 | C2) to (C3 | C4). Not sure how to
+// prevent that, I've tried everything I can. Always comes out `never`.
+export function dangerouslySpecifyAsssuredEntityId<
+  To extends EntityData,
+  C extends EntityData = EntityData
+>(eid: AssuredEntityId<C>) {
+  return eid as To extends InnerType<typeof eid> ? AssuredEntityId<To> : never;
 }
 
 type EntityData = {
@@ -192,7 +215,7 @@ export class CES3<ED extends EntityData> {
   data<T extends ED, K extends T['k']>(
     eid: AssuredEntityId<T> | undefined,
     kind: K
-  ) {
+  ): NarrowComponent<T, K> | undefined {
     if (!eid || eid.destroyed) return;
     const datas = this.cmpToIdArr.get(kind);
     if (process.env.NODE_ENV !== 'production') {
@@ -240,30 +263,47 @@ export class CES3<ED extends EntityData> {
     >;
   }
 
-  has<ExistingComponents extends ED>(
+  /**
+   * Returns the entity data if the entity has a specific component kind,
+   * otherwise null. Use this to allow a system to have optional effects when
+   * extra data is present.
+   */
+  has<T extends ED, K extends T['k']>(
     eid: EntityId,
-    kind: ExistingComponents['k']
-  ) {
+    kind: K
+  ): NarrowComponent<T, K> | null {
     const datas = this.cmpToIdArr.get(kind);
-    if (eid.destroyed || !datas || !datas[eid.id]) return false;
-    return true;
+    const data = datas?.[eid.id];
+    if (eid.destroyed || !datas || !data) return null;
+    return data as NarrowComponent<T, K>;
   }
 
   select<T extends ED['k']>(kinds: T[] | readonly T[]) {
     const matching = new Set<AssuredEntityId<NarrowComponent<ED, T>>>();
 
+    // This "search" algorithm basically works by first starting with all
+    // possible matches using kinds[0], then excluding each entity by checking
+    // if it also has all subsequent kinds.
+
     for (let i = 0; i < kinds.length; i++) {
       const kind = kinds[i];
       const datas = this.cmpToIdArr.get(kind);
       if (!datas) return new Set<AssuredEntityId<NarrowComponent<ED, T>>>();
-      if (matching.size === 0) {
+
+      // If this is the first `kind`, then effectively add all to the
+      // potentially matching list, because any matching entity must have that
+      // first component. This must only happen on the first `kind` though, to
+      // prevent accidentally re-starting the algorithm when there is no
+      // intersection between the first and second kinds of the query.
+      if (i === 0) {
         for (let k = 0; k < datas.length; k++) {
           const data = datas[k];
           const eid = this.ids[k];
-          if (data !== undefined && eid)
+          if (data !== undefined && eid && !eid.destroyed)
             matching.add(eid as AssuredEntityId<NarrowComponent<ED, T>>);
         }
       } else {
+        // Delete any entities from the set that do not have the current kind.
         for (const eid of matching.values()) {
           if (datas[eid.id] === undefined) matching.delete(eid);
         }

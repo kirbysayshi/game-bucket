@@ -5,7 +5,7 @@ const ROOT_EL = qsel('#r');
 const PRIMARY_CVS = qsel('#c');
 const UI_ROOT = qsel('#u');
 
-if (!ROOT_EL || !PRIMARY_CVS || !UI_ROOT) {
+if (!ROOT_EL || !PRIMARY_CVS) {
   throw new Error('Could not locate DOM!');
 }
 

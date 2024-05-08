@@ -9,7 +9,6 @@
         margin: 0;
         padding: 0;
         overflow: hidden;
-        /* background-color:#000; */
         background-color: #cc66cc;
         position: relative;
         height: 100%;
@@ -43,6 +42,85 @@
         overflow: hidden;
         padding: 10vw;
       }
+
+
+
+      :root {
+        /* Will all be set by JS */
+        --yellowRGBA: black;
+        --blackRGBA: black;
+        --bodyFontSize: 0;
+        --ctrlPanelHeight: 0;
+        --ctrlPanelTop: 0;
+        --ctrlDisplay: none;
+        --thanksDisplay: none;
+      }
+
+      #ctrl {
+        position: absolute;
+        top: var(--ctrlPanelTop);
+        height: var(--ctrlPanelHeight);
+        width: 100%;
+
+        display: var(--ctrlDisplay);
+        justify-content: space-around;
+      }
+
+      .ui-stick {
+        flex: 1 0 0px;
+        border: 1px solid var(--yellowRGBA);
+        border-radius: 200%;
+        margin: 10%;
+
+        position: relative;
+      }
+
+      /* https://stackoverflow.com/a/29308459 */
+      .ui-stick:before {
+        content: "";
+        display: block;
+        padding-top: 100%;
+        float: left;
+      }
+
+      .ui-nub {
+        border-radius: 200%;
+        background-color: var(--yellowRGBA);
+
+        --width: 50%;
+        --height: 50%;
+
+        --leftPct: 50%;
+        --topPct: 50%;
+
+        position: absolute;
+        top: var(--topPct);
+        left: var(--leftPct);
+        width: var(--width);
+        height: var(--height);
+        margin-left: calc(var(--width) / 2 * -1);
+        margin-top: calc(var(--height) / 2 * -1);
+
+        text-align: center;
+        color: var(--blackRGBA);
+        font-size: var(--bodyFontSize);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+/* 
+      .ui-btn {
+        position: absolute;
+
+        border: 0;
+        background-color: var(--yellowRGBA);
+        color: var(--blackRGBA);
+        font-size: var(--bodyFontSize);
+        text-transform: uppercase;
+      }
+ */
+
+
     </style>
     <meta
       name="viewport"
@@ -57,7 +135,19 @@
   <body>
     <div id="r">
       <canvas id="c"></canvas>
-      <div id="u"></div>
+      <!-- <div id="u"></div> -->
+      <div id="ctrl">
+        <div id="stick-move" class="ui-stick">
+          <div class="ui-nub">WASD</div>
+        </div>
+        <!-- <button id="btn-boost" class="ui-btn" style="top: 10%; padding: 1%;">Boost (Shift)</button> -->
+        <!-- <button id="btn-reset" class="ui-btn" style="bottom: 0px">
+                                                          Reset Signal (Enter)
+                                                        </button> -->
+        <div id="stick-rotate" class="ui-stick">
+          <div class="ui-nub">← →</div>
+        </div>
+      </div>
     </div>
     <!-- REPLACER START -->
     <script src="bundle.js"></script>

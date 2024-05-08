@@ -42,4 +42,5 @@ var hash = (n: number) =>
 const param = useSeedValue();
 const seed = param ? Number(param) : Date.now();
 const gen = mb32(hash(seed));
-export const useRandom = () => gen();
+
+export const getRandom = () => gen();

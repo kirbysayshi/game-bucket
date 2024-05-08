@@ -6,11 +6,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import url from '@rollup/plugin-url';
 import copy from 'rollup-plugin-copy';
-
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pkg = require('./package.json');
-
+import pkg from './package.json' with { type: 'json' };
 
 const extensions = ['.js', '.jsx', '.ts', '.tsx'];
 
@@ -30,6 +26,16 @@ const pluginShortenKnownStrings = () => ({
       ['drag-state', 'ds'],
       ['pointer-target', 'pt'],
       ['spring-constraint', 'sc'],
+      ['bounding-box', 'bb'],
+      ['circle-shape', 'cs'],
+      ['user-controlled', 'uc'],
+      ['debug-drawable-circle', 'ddc'],
+      ['debug-drawable-rect', 'ddr'],
+      ['enemy-miasma', 'em'],
+      ['enemy-targetable', 'et'],
+      ['impedance-value', 'imv'],
+      ['health-value', 'hv'],
+      ['enemy-impedance', 'eim'],
     ];
 
     const shorts = new Set();
@@ -40,7 +46,7 @@ const pluginShortenKnownStrings = () => ({
       shorts.add(short);
       chunk = chunk.replace(
         new RegExp(`['"]${long}['"]`, 'g'),
-        JSON.stringify(short)
+        JSON.stringify(short),
       );
     }
 
@@ -54,7 +60,10 @@ const pluginShortenKnownStrings = () => ({
 // in V8.
 const pluginRemoveTypescriptAssertions = () => ({
   renderChunk(chunk) {
-    return chunk.replace(/(?<!function )assertDefinedFatal\([^)]+\)/g, '');
+    return chunk.replace(
+      /(?<!function )(assertDefinedFatal|assertExhaustive|assertSpatialHandleIsInt)\([^)]+\)/g,
+      '',
+    );
   },
 });
 
@@ -82,7 +91,11 @@ export default {
 
     commonjs(),
 
-    babel({ extensions, babelHelpers: 'bundled', include: ['src/**/*'] }),
+    babel({
+      extensions,
+      babelHelpers: 'bundled',
+      include: ['src/**/*', 'assets/**/*.ts'],
+    }),
 
     replace({
       preventAssignment: true,
