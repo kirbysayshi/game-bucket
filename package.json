@@ -7,6 +7,7 @@
   "files": [
     "dist"
   ],
+  "packageManager": "pnpm@9.1.0",
   "dependencies": {
     "pocket-physics": "^11.0.0",
     "science-halt": "^0.2.0"
