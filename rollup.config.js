@@ -69,6 +69,7 @@ const pluginRemoveTypescriptAssertions = () => ({
 
 export default {
   input: './src/index.ts',
+
   plugins: [
     resolve({ extensions }),
 
@@ -117,10 +118,6 @@ export default {
     {
       file: 'dist/bundle.js',
       format: 'iife',
-      name: pkg.name
-        .split('-')
-        .map((s) => s[0].toUpperCase() + s.substr(1))
-        .join(''),
     },
   ],
 };

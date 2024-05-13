@@ -136,7 +136,9 @@ export function addComponent<T extends ComponentData>(
 
   for (let key of Object.keys(init) as (keyof typeof init)[]) {
     // lazy initialize, will only happen for the first component of the manager
-    let storage = man.storage[key] ?? [];
+    let storage = (man.storage[key] ?? []) as NonNullable<
+      (typeof man)['storage'][typeof key]
+    >;
     storage[idx] = init[key];
     man.storage[key] = storage;
   }
@@ -224,7 +226,9 @@ function removeComponentInstance<T extends ComponentData>(
   // 3: update the storage to the new location
   for (let k = 0; k < keys.length; k++) {
     const key = keys[k];
-    const storage = man.storage[key] ?? [];
+    const storage = (man.storage[key] ?? []) as NonNullable<
+      (typeof man)['storage'][typeof key]
+    >;
     const value = storage[inst.storageIdx];
     if (isOwnedEntityId(value)) destroyEntity(eman, value);
     storage[inst.storageIdx] = storage[lastStorageIdx];
@@ -276,7 +280,7 @@ export function firstComponent<T extends ComponentData>(
   return man.entityStorage.at(0);
 }
 
-interface ComponentData extends Record<string, unknown[]> {}
+interface ComponentData<T = unknown> extends Record<string, T[]> {}
 
 export class ComponentManager<T extends ComponentData = ComponentData> {
   // Returns the _head_ of the linked list of instances for an EntityId
@@ -292,7 +296,7 @@ export class ComponentManager<T extends ComponentData = ComponentData> {
   // These should actually be one Record, but TS is not expressive enough to
   // allow a  Record to have both known and Generic keys. These arrays will
   // always be the same length.
-  public storage: { [K in keyof T]?: unknown[] } = {};
+  public storage: { [K in keyof T]?: T[K] } = {};
   public entityStorage: EntityId[] = [];
 
   destroy() {

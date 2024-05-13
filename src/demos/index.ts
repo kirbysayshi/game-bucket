@@ -1,0 +1,30 @@
+const demos: Record<
+  string,
+  () => Promise<{ boot: () => Promise<void>; shutdown: () => Promise<void> }>
+> = {
+  '#three-body': () => import('./index.demo.three-body'),
+};
+
+window.addEventListener('hashchange', async (ev) => {
+  const oldHash = ev.oldURL.match('#(.+)$');
+  if (oldHash) {
+    const { shutdown } = await demos[oldHash[0]]();
+    await shutdown();
+  }
+
+  const { boot } = await demos[location.hash]();
+  await boot();
+});
+
+async function boot() {
+  if (location.hash === '') {
+    return;
+  }
+
+  const { boot } = await demos[location.hash]();
+  await boot();
+}
+
+boot().catch((err) => {
+  throw err;
+});

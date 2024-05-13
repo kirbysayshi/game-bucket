@@ -41,6 +41,7 @@
   "scripts": {
     "types": "tsc",
     "build": "rollup -c",
+    "build:demos": "rollup -c rollup.demos.config.js",
     "start": "./tools/start.sh",
     "zip": "./tools/zip.sh",
     "deploy": "yarn zip && gh-pages -d dist/",

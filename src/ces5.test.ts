@@ -28,7 +28,10 @@ export class PointMassComponentMan extends ComponentManager<{
     const handle = lookup(this, eid);
     let n = handle;
     while (n) {
-      all.push(this.mass(n));
+      if (n) {
+        const m = this.storage.mass?.[n.storageIdx];
+        all.push(m);
+      }
       n = n.next;
     }
     return all;
