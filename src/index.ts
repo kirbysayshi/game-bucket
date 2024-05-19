@@ -1,6 +1,7 @@
 import ScienceHalt from 'science-halt';
 import { Assets } from './asset-map';
-import { DrawTimeHz, makeGameCmp, UpdateTimeHz } from './components/GameCmp';
+import { makeGameCmp } from './components/GameCmp';
+import { DrawTimeHz, UpdateTimeHz } from './loopConstants';
 import {
   computeWindowResize,
   initializeResize as initializeWindowResizeListener,

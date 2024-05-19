@@ -2,7 +2,7 @@ const demos: Record<
   string,
   () => Promise<{ boot: () => Promise<void>; shutdown: () => Promise<void> }>
 > = {
-  '#three-body': () => import('./index.demo.three-body'),
+  '#three-body': () => import('./three-body/index.demo.three-body'),
 };
 
 window.addEventListener('hashchange', async (ev) => {

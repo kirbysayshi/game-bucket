@@ -274,10 +274,18 @@ export function removeComponent<T extends ComponentData>(
 /**
  * Good for singletons.
  */
-export function firstComponent<T extends ComponentData>(
-  man: ComponentManager<T>,
-) {
+export function firstEntity<T extends ComponentData>(man: ComponentManager<T>) {
   return man.entityStorage.at(0);
+}
+
+export function read<T extends ComponentData, K extends keyof T>(
+  man: ComponentManager<T>,
+  eid: EntityId,
+  name: K,
+): NonNullable<ComponentManager<T>['storage'][K]>[number] | null {
+  const handle = lookup(man, eid);
+  if (!handle) return null;
+  return man.storage[name]?.[handle.storageIdx] ?? null;
 }
 
 interface ComponentData<T = unknown> extends Record<string, T[]> {}
@@ -296,12 +304,17 @@ export class ComponentManager<T extends ComponentData = ComponentData> {
   // These should actually be one Record, but TS is not expressive enough to
   // allow a  Record to have both known and Generic keys. These arrays will
   // always be the same length.
+
   public storage: { [K in keyof T]?: T[K] } = {};
   public entityStorage: EntityId[] = [];
+}
 
-  destroy() {
-    this.s.destroyed.fire();
-  }
+export function destroyComponentManager(
+  man: ComponentManager,
+  em: EntityManager,
+) {
+  man.entityStorage.forEach((eid) => removeComponent(man, em, eid));
+  man.s.destroyed.fire();
 }
 
 class Sig<T> {

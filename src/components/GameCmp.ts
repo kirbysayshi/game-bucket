@@ -3,9 +3,7 @@ import { CES3C } from '../initialize-ces';
 import { Level001 } from '../levels/level-001';
 import { UpdateGameTickSystem } from '../systems/UpdateGameTickSystem';
 import { assertDefinedFatal } from '../utils';
-
-export const DrawTimeHz = 60 as const;
-export const UpdateTimeHz = 30 as const;
+import { UpdateTimeHz } from '../loopConstants';
 
 // A system of an entity-component-system framework is simply a function that
 // is repeatedly called. We separate them into two types based on how often

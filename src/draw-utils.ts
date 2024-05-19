@@ -1,4 +1,4 @@
-import { Integratable } from 'pocket-physics';
+import { Integratable, VelocityDerivable } from 'pocket-physics';
 
 import {
   asViewportUnits,
@@ -15,9 +15,9 @@ export type Edge = { p0: ViewportUnitVector2; p1: ViewportUnitVector2 };
 export function debugDrawIntegratable(
   vp: ViewportCmp,
   ctx: CanvasRenderingContext2D,
-  cmp: Integratable,
+  cmp: VelocityDerivable,
   interp: number,
-  radius: ViewportUnits = asViewportUnits(1)
+  radius: ViewportUnits = asViewportUnits(1),
 ) {
   ctx.beginPath();
   ctx.fillStyle = 'rgba(0,0,255,0.2)';
@@ -25,16 +25,16 @@ export function debugDrawIntegratable(
     toProjectedPixels(
       vp,
       (cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp) as ViewportUnits,
-      'x'
+      'x',
     ),
     toProjectedPixels(
       vp,
       (cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp) as ViewportUnits,
-      'y'
+      'y',
     ),
     toPixelUnits(vp, radius),
     0,
-    Math.PI * 2
+    Math.PI * 2,
   );
   ctx.fill();
 }
@@ -42,9 +42,9 @@ export function debugDrawIntegratable(
 export function debugDrawIntegratableRect(
   vp: ViewportCmp,
   ctx: CanvasRenderingContext2D,
-  cmp: Integratable,
+  cmp: VelocityDerivable,
   interp: number,
-  wh: ViewportUnitVector2
+  wh: ViewportUnitVector2,
 ) {
   ctx.beginPath();
   ctx.fillStyle = 'rgba(0,0,255,0.2)';
@@ -66,7 +66,7 @@ function debugDrawPoint(
   vp: ViewportCmp,
   ctx: CanvasRenderingContext2D,
   cmp: ViewportUnitVector2,
-  interp: number
+  interp: number,
 ) {
   ctx.save();
   ctx.beginPath();
@@ -76,7 +76,7 @@ function debugDrawPoint(
     toProjectedPixels(vp, cmp.y, 'y'),
     toPixelUnits(vp, asViewportUnits(1)),
     0,
-    Math.PI * 2
+    Math.PI * 2,
   );
   ctx.fill();
   ctx.restore();
@@ -86,7 +86,7 @@ function debugDrawEdge(
   vp: ViewportCmp,
   ctx: CanvasRenderingContext2D,
   edge: Edge,
-  interp: number
+  interp: number,
 ) {
   debugDrawPoint(vp, ctx, edge.p0, interp);
   debugDrawPoint(vp, ctx, edge.p1, interp);
@@ -97,11 +97,11 @@ function debugDrawEdge(
   ctx.lineWidth = toPixelUnits(vp, asViewportUnits(0.5));
   ctx.moveTo(
     toProjectedPixels(vp, edge.p0.x, 'x'),
-    toProjectedPixels(vp, edge.p0.y, 'y')
+    toProjectedPixels(vp, edge.p0.y, 'y'),
   );
   ctx.lineTo(
     toProjectedPixels(vp, edge.p1.x, 'x'),
-    toProjectedPixels(vp, edge.p1.y, 'y')
+    toProjectedPixels(vp, edge.p1.y, 'y'),
   );
   ctx.stroke();
   ctx.restore();

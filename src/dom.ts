@@ -1,3 +1,5 @@
+import { assertDefinedFatal } from './utils';
+
 export const qsel = document.querySelector.bind(document);
 export const qsela = document.querySelectorAll.bind(document);
 
@@ -10,15 +12,18 @@ if (!ROOT_EL || !PRIMARY_CVS) {
 }
 
 export function usePrimaryCanvas() {
-  return PRIMARY_CVS! as HTMLCanvasElement;
+  assertDefinedFatal(PRIMARY_CVS, 'PRIMARY_CVS');
+  return PRIMARY_CVS as HTMLCanvasElement;
 }
 
 export function useUIRoot() {
-  return UI_ROOT! as HTMLDivElement;
+  assertDefinedFatal(UI_ROOT, 'UI_ROOT');
+  return UI_ROOT as HTMLDivElement;
 }
 
 export function useRootElement() {
-  return ROOT_EL! as HTMLDivElement;
+  assertDefinedFatal(ROOT_EL, 'ROOT_EL');
+  return ROOT_EL as HTMLDivElement;
 }
 
 export function o_o(tagName: string, content: string) {
@@ -61,12 +66,12 @@ type EventMap<T> = T extends Window
 
 export function listen<
   T extends EventTarget,
-  K extends keyof EventMap<T> & string
+  K extends keyof EventMap<T> & string,
 >(
   target: T,
   type: K,
   callback: (this: T, ev: EventMap<T>[K]) => any,
-  options?: AddEventListenerOptions
+  options?: AddEventListenerOptions,
 ) {
   target.addEventListener(type, callback as EventListener, options);
   return () => {
