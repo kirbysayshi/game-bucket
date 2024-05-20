@@ -1,4 +1,5 @@
 import {
+  Integratable,
   Vector2,
   accelerate,
   copy,
@@ -81,20 +82,8 @@ export async function shutdown() {
 }
 
 class Phyman extends ComponentManager<{
-  cpos: Vector2[];
-  ppos: Vector2[];
-  acel: Vector2[];
-  mass: number[];
-}> {
-  get<T extends keyof Phyman['storage']>(
-    eid: EntityId,
-    k: T,
-  ): NonNullable<Phyman['storage'][T]>[number] | null {
-    const handle = lookup(this, eid);
-    if (!handle) return null;
-    return this.storage[k]?.[handle.storageIdx] ?? null;
-  }
-}
+  vint: (Integratable & { mass: number })[];
+}> {}
 
 class World {
   vp = new ViewportMan(useRootElement);
@@ -128,10 +117,12 @@ class World {
     {
       const eid = createEntity(this.eman);
       addComponent(this.phyman, eid, {
-        cpos: v2(25, 0),
-        ppos: v2(25, 0),
-        acel: v2(-500, -600),
-        mass: 100,
+        vint: {
+          cpos: v2(25, 0),
+          ppos: v2(25, 0),
+          acel: v2(-500, -600),
+          mass: 100,
+        },
       });
       addComponent(this.circleman, eid, {
         radius: 10,
@@ -141,10 +132,12 @@ class World {
     {
       const eid = createEntity(this.eman);
       addComponent(this.phyman, eid, {
-        cpos: v2(-25, 0),
-        ppos: v2(-25, 0),
-        acel: v2(500, 100),
-        mass: 100,
+        vint: {
+          cpos: v2(-25, 0),
+          ppos: v2(-25, 0),
+          acel: v2(500, 100),
+          mass: 100,
+        },
       });
       addComponent(this.circleman, eid, {
         radius: 10,
@@ -154,10 +147,12 @@ class World {
     {
       const eid = createEntity(this.eman);
       addComponent(this.phyman, eid, {
-        cpos: v2(0, 25),
-        ppos: v2(0, 25),
-        acel: v2(-500, 0),
-        mass: 100,
+        vint: {
+          cpos: v2(0, 25),
+          ppos: v2(0, 25),
+          acel: v2(-500, 0),
+          mass: 100,
+        },
       });
       addComponent(this.circleman, eid, {
         radius: 10,
@@ -166,79 +161,38 @@ class World {
   }
 
   update(dt: number) {
-    const phys1 = {
-      cpos: v2(),
-      ppos: v2(),
-      acel: v2(),
-      mass: v2(),
-    };
-
-    const phys2 = {
-      cpos: v2(),
-      ppos: v2(),
-      acel: v2(),
-      mass: v2(),
-    };
-
     const entities = Array.from(this.circlesQ.entities);
 
     for (let i = 0; i < entities.length; i++) {
       const eid1 = entities[i];
 
-      const cpos1 = read(this.phyman, eid1, 'cpos');
-      const ppos1 = read(this.phyman, eid1, 'ppos');
-      const acel1 = read(this.phyman, eid1, 'acel');
-      const mass1 = read(this.phyman, eid1, 'mass');
-
-      if (!cpos1 || !ppos1 || !acel1 || !mass1) continue;
-
-      copy(phys1.cpos, cpos1);
-      copy(phys1.ppos, ppos1);
-      copy(phys1.acel, acel1);
+      const vint1 = read(this.phyman, eid1, 'vint');
+      if (!vint1) continue;
 
       for (let j = i + 1; j < entities.length; j++) {
         const eid2 = entities[j];
-        const cpos2 = read(this.phyman, eid2, 'cpos');
-        const ppos2 = read(this.phyman, eid2, 'ppos');
-        const acel2 = read(this.phyman, eid2, 'acel');
-        const mass2 = read(this.phyman, eid2, 'mass');
-        if (!cpos2 || !ppos2 || !acel2 || !mass2) continue;
+        const vint2 = read(this.phyman, eid2, 'vint');
+        if (!vint2) continue;
 
-        copy(phys2.cpos, cpos2);
-        copy(phys2.ppos, ppos2);
-        copy(phys2.acel, acel2);
+        solveGravitation(vint1, vint1.mass, vint2, vint2.mass);
+        solveGravitation(vint2, vint2.mass, vint1, vint1.mass);
 
-        solveGravitation(phys1, mass1, phys2, mass2);
-        solveGravitation(phys2, mass2, phys1, mass1);
-
-        const d = distance(phys1.cpos, phys2.cpos);
+        const d = distance(vint1.cpos, vint2.cpos);
         const minDist = 20;
         if (d < minDist)
           solveDistanceConstraint(
-            phys1,
-            mass1,
-            phys2,
-            mass2,
+            vint1,
+            vint1.mass,
+            vint2,
+            vint2.mass,
             minDist,
             0.1,
             false,
           );
-
-        copy(cpos1, phys1.cpos);
-        copy(ppos1, phys1.ppos);
-        copy(acel1, phys1.acel);
-
-        copy(cpos2, phys2.cpos);
-        copy(ppos2, phys2.ppos);
-        copy(acel2, phys2.acel);
       }
 
-      accelerate(phys1, dt);
-      inertia(phys1);
-
-      copy(cpos1, phys1.cpos);
-      copy(ppos1, phys1.ppos);
-      copy(acel1, phys1.acel);
+      accelerate(vint1, dt);
+      inertia(vint1);
     }
   }
 
@@ -247,16 +201,15 @@ class World {
 
     const pos = v2();
     this.circlesQ.entities.forEach((eid) => {
-      const cpos = read(this.phyman, eid, 'cpos');
-      const ppos = read(this.phyman, eid, 'ppos');
+      const vint = read(this.phyman, eid, 'vint');
       const radius = read(this.circleman, eid, 'radius');
-      if (!cpos || !ppos || !radius) return;
-      sub(pos, cpos, ppos);
+      if (!vint || !radius) return;
+      sub(pos, vint.cpos, vint.ppos);
 
       debugDrawIntegratable(
         this.vp.v,
         this.vp.v.dprCanvas.ctx,
-        { cpos, ppos },
+        vint,
         interp,
         toViewportUnits(this.vp.v, radius),
       );
