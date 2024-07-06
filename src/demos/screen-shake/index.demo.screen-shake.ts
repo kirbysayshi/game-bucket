@@ -41,18 +41,7 @@ export async function shutdown() {
 class Game {
   eman = new EntityManager();
 
-  screenShakeMan = new ComponentManager<{
-    output: {
-      offset: Vector2;
-      rotation: number;
-    }[];
-
-    initial: {
-      strength: number;
-      rotation: number;
-      durationMs: number;
-    }[];
-  }>();
+  screenShake = new ScreenShakeSystem(this.eman);
 
   circleman = new ComponentManager<{
     radius: number[];
@@ -70,23 +59,6 @@ class Game {
   eventsOff = new AbortController();
 
   start() {
-    registerComponentMan(this.eman, this.screenShakeMan);
-
-    {
-      const eid = createEntity(this.eman);
-      addComponent(this.screenShakeMan, eid, {
-        initial: {
-          strength: 0,
-          rotation: 0,
-          durationMs: 0,
-        },
-        output: {
-          offset: v2(),
-          rotation: 0,
-        },
-      });
-    }
-
     {
       const eid = createEntity(this.eman);
       addComponent(this.phyman, eid, {
@@ -105,13 +77,7 @@ class Game {
     addEventListener(
       'click',
       () => {
-        const eid = firstEntity(this.screenShakeMan);
-        if (!eid) return;
-        const initial = read(this.screenShakeMan, eid, 'initial');
-        if (!initial) return;
-        initial.strength = 5;
-        initial.rotation = Math.PI / 8;
-        initial.durationMs = 200;
+        this.screenShake.shake(5, 200, Math.PI / 8);
       },
       { signal: this.eventsOff.signal },
     );
@@ -120,30 +86,13 @@ class Game {
       drawTime: 1000 / DrawTimeHz,
       updateTime: 1000 / UpdateTimeHz,
       update: (dt) => {
-        const eid = firstEntity(this.screenShakeMan);
-        if (eid) {
-          const output = read(this.screenShakeMan, eid, 'output');
-          const initial = read(this.screenShakeMan, eid, 'initial');
-          if (!output || !initial) return;
-          output.offset.x = range(-initial.strength, initial.strength);
-          output.offset.y = range(-initial.strength, initial.strength);
-          output.rotation = range(-initial.rotation, initial.rotation);
-          initial.durationMs = Math.max(initial.durationMs - dt, 0);
-          if (initial.durationMs === 0) {
-            initial.strength = 0;
-            initial.rotation = 0;
-            output.offset.x = 0;
-            output.offset.y = 0;
-            output.rotation = 0;
-          }
-        }
+        this.screenShake.update(dt);
       },
       draw: (interp) => {
         clearScreen(this.vp.v);
 
         {
-          const eid = firstEntity(this.screenShakeMan);
-          const data = eid ? read(this.screenShakeMan, eid, 'output') : null;
+          const data = this.screenShake.info();
           if (data) {
             this.vp.v.dprCanvas.ctx.translate(data.offset.x, data.offset.y);
             this.vp.v.dprCanvas.ctx.rotate(data.rotation);
@@ -176,8 +125,7 @@ class Game {
         );
 
         {
-          const eid = firstEntity(this.screenShakeMan);
-          const data = eid ? read(this.screenShakeMan, eid, 'output') : null;
+          const data = this.screenShake.info();
           if (data) {
             this.vp.v.dprCanvas.ctx.rotate(-data.rotation);
             this.vp.v.dprCanvas.ctx.translate(-data.offset.x, -data.offset.y);
@@ -204,7 +152,87 @@ class Game {
 
   stop() {
     this.stopLoop();
-    destroyComponentManager(this.screenShakeMan, this.eman);
+    this.screenShake.destroy();
     this.eventsOff.abort();
+  }
+}
+
+interface Updatable {
+  update(dt: number): void;
+}
+
+interface Destroyable {
+  destroy(): void;
+}
+
+class ScreenShakeSystem implements Updatable, Destroyable {
+  screenShakeMan = new ComponentManager<{
+    output: {
+      offset: Vector2;
+      rotation: number;
+    }[];
+
+    initial: {
+      strength: number;
+      rotation: number;
+      durationMs: number;
+    }[];
+  }>();
+
+  constructor(private eman: EntityManager) {
+    registerComponentMan(this.eman, this.screenShakeMan);
+
+    const eid = createEntity(this.eman);
+    addComponent(this.screenShakeMan, eid, {
+      initial: {
+        strength: 0,
+        rotation: 0,
+        durationMs: 0,
+      },
+      output: {
+        offset: v2(),
+        rotation: 0,
+      },
+    });
+  }
+
+  destroy() {
+    destroyComponentManager(this.screenShakeMan, this.eman);
+  }
+
+  update(dt: number) {
+    const eid = firstEntity(this.screenShakeMan);
+    if (eid) {
+      const output = read(this.screenShakeMan, eid, 'output');
+      const initial = read(this.screenShakeMan, eid, 'initial');
+      if (!output || !initial) return;
+      output.offset.x = range(-initial.strength, initial.strength);
+      output.offset.y = range(-initial.strength, initial.strength);
+      output.rotation = range(-initial.rotation, initial.rotation);
+      initial.durationMs = Math.max(initial.durationMs - dt, 0);
+      if (initial.durationMs === 0) {
+        initial.strength = 0;
+        initial.rotation = 0;
+        output.offset.x = 0;
+        output.offset.y = 0;
+        output.rotation = 0;
+      }
+    }
+  }
+
+  shake(strength: number, durationMs: number, rotation: number = 0) {
+    const eid = firstEntity(this.screenShakeMan);
+    if (!eid) return;
+    const initial = read(this.screenShakeMan, eid, 'initial');
+    if (!initial) return;
+    initial.strength = strength;
+    initial.rotation = rotation;
+    initial.durationMs = durationMs;
+  }
+
+  info() {
+    const eid = firstEntity(this.screenShakeMan);
+    const data = eid ? read(this.screenShakeMan, eid, 'output') : null;
+    return data;
   }
 }
