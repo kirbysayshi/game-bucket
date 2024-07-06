@@ -1,11 +1,8 @@
 import {
   Integratable,
-  Vector2,
   accelerate,
-  copy,
   distance,
   inertia,
-  set,
   solveDistanceConstraint,
   solveGravitation,
   sub,
@@ -14,26 +11,21 @@ import {
 import ScienceHalt from 'science-halt';
 import Fool from '../../../assets/00 - Fool.png';
 import {
-  ComponentInstanceHandle,
   ComponentManager,
-  EntityId,
   EntityManager,
   Query,
   addComponent,
   createEntity,
   destroyComponentManager,
-  lookup,
   read,
   registerComponentMan,
-  removeComponent,
 } from '../../ces5';
 import { createGameLoop } from '../../loop';
 import { DrawTimeHz, UpdateTimeHz } from '../../loopConstants';
-import { ViewportMan } from './viewport';
-import { useRootElement, useUIRoot } from '../../dom';
-import { DrawDebugCamera } from './DebugDrawCamera';
+import { ViewportMan } from '../shared/viewport';
+import { useRootElement } from '../../dom';
+import { DrawDebugCamera } from '../shared/DebugDrawCamera';
 import {
-  asViewportUnits,
   clearScreen,
   moveViewportCamera,
   toViewportUnits,
@@ -87,7 +79,6 @@ class Phyman extends ComponentManager<{
 
 class World {
   vp = new ViewportMan(useRootElement);
-
   eman = new EntityManager();
   phyman = new Phyman();
   circleman = new ComponentManager<{

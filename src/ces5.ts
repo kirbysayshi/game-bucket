@@ -110,8 +110,9 @@ function makeInstanceHandle(storageIdx: number): ComponentInstanceHandle {
 
 export function lookup<T extends ComponentData>(
   man: ComponentManager<T>,
-  eid: EntityId,
+  eid: EntityId | null | undefined,
 ): ComponentInstanceHandle | null {
+  if (!eid) return null;
   const inst = man.heads.get(eid);
   return inst ? inst : null;
 }
@@ -280,7 +281,7 @@ export function firstEntity<T extends ComponentData>(man: ComponentManager<T>) {
 
 export function read<T extends ComponentData, K extends keyof T>(
   man: ComponentManager<T>,
-  eid: EntityId,
+  eid: EntityId | undefined | null,
   name: K,
 ): NonNullable<ComponentManager<T>['storage'][K]>[number] | null {
   const handle = lookup(man, eid);
