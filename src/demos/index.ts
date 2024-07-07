@@ -4,6 +4,7 @@ const demos: Record<
 > = {
   '#three-body': () => import('./three-body/index.demo.three-body'),
   '#screen-shake': () => import('./screen-shake/index.demo.screen-shake'),
+  '#entities': () => import('./entities/index.demo.entities'),
 };
 
 window.addEventListener('hashchange', async (ev) => {
