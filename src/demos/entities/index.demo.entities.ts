@@ -4,20 +4,23 @@ import {
   Vector2,
   accelerate,
   copy,
+  distance,
   inertia,
   set,
   v2,
 } from 'pocket-physics';
 import { ViewportMan } from '../shared/viewport';
 import { createGameLoop } from '../../loop';
-import { useRootElement } from '../../dom';
+import { listen, useRootElement } from '../../dom';
 import { DrawDebugCamera } from '../shared/DebugDrawCamera';
 import { debugDrawIntegratable } from '../../draw-utils';
 import {
   ViewportUnitVector2,
+  ViewportUnits,
   asViewportUnits,
   clearScreen,
   drawTextLinesInViewport,
+  toProjectedPixels,
   toViewportUnits,
   vv2,
 } from '../../components/ViewportCmp';
@@ -259,9 +262,51 @@ class App implements Destroyable {
     }
 
     addEventListener(
+      'keydown',
+      (ev) => {
+        if (ev.key === 'ArrowRight') {
+          vp.v.camera.target.x = (1 + vp.v.camera.target.x) as ViewportUnits;
+        } else if (ev.key === 'ArrowLeft') {
+          vp.v.camera.target.x = (-1 + vp.v.camera.target.x) as ViewportUnits;
+        }
+      },
+      { signal: this.eventsOff.signal },
+    );
+
+    addEventListener(
       'click',
-      () => {
-        shaker.shake(5, 200, Math.PI / 8);
+      (ev) => {
+        // shaker.shake(5, 200, Math.PI / 8);
+
+        // How to pick from screen space to world:
+
+        // canvas/element space
+        const rect = vp.v.dprCanvas.cvs.getBoundingClientRect();
+        const cvsLocalX = ev.clientX - rect.left;
+        const cvsLocalY = ev.clientY - rect.top;
+
+        // vp space
+        const vpLocalX = toViewportUnits(vp.v, cvsLocalX);
+        const vpLocalY = toViewportUnits(vp.v, cvsLocalY);
+
+        // camera space
+        const vpFrustrumizedX = vpLocalX - vp.v.camera.frustrum.x;
+        const vpFrustrumizedY = vpLocalY - vp.v.camera.frustrum.y;
+
+        // world space
+        const worldX = vp.v.camera.target.x + vpFrustrumizedX;
+        const worldY = vp.v.camera.target.y + vpFrustrumizedY;
+
+        const cameraSpace = vv2(vpFrustrumizedX, vpFrustrumizedY);
+        const worldSpace = vv2(worldX, worldY);
+
+        console.log(vp.v.camera.target, cameraSpace, worldSpace);
+
+        // distance from center of screen (aka camera) to picked point
+        const d = distance(cameraSpace, vv2(0, 0));
+
+        // shake according to distance
+        shaker.shake(d, 200, Math.PI / 8);
       },
       { signal: this.eventsOff.signal },
     );
