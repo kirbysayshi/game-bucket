@@ -3,6 +3,7 @@ import {
   Integratable,
   Vector2,
   accelerate,
+  copy,
   inertia,
   set,
   v2,
@@ -16,11 +17,14 @@ import {
   ViewportUnitVector2,
   asViewportUnits,
   clearScreen,
+  drawTextLinesInViewport,
   toViewportUnits,
+  vv2,
 } from '../../components/ViewportCmp';
 import { range } from '../shared/range';
 import { makeMovementCmp } from '../../components/MovementCmp';
 import { makeIntegratable } from '../shared/make-integratable';
+import { YellowRGBA } from '../../theme';
 
 let app: App | null = null;
 
@@ -130,10 +134,6 @@ class Eman<T extends Entity = Entity> {
   }
 }
 
-// could just remove the generic, but the pattern of having `datas` might be useful
-
-// TODO: try to implement screen shake with this functional Entity pattern?
-
 class Circle extends Entity {
   movement: Integratable = makeIntegratable();
   radius = asViewportUnits(10);
@@ -195,6 +195,36 @@ class ScreenShake extends Entity {
   }
 }
 
+class TextEntity extends Entity {
+  text = '';
+  sizeInViewportLines = 30;
+
+  movement = makeIntegratable();
+
+  setText(text: string, pos: ViewportUnitVector2, sizeInViewportLines: number) {
+    this.text = text;
+    copy(this.movement.cpos, pos);
+    copy(this.movement.ppos, pos);
+    this.sizeInViewportLines = sizeInViewportLines;
+  }
+
+  update(dt: number) {
+    accelerate(this.movement, dt);
+    inertia(this.movement);
+  }
+
+  draw(interp: number, vp: ViewportMan) {
+    drawTextLinesInViewport(
+      vp.v,
+      this.text,
+      this.movement.cpos,
+      'center',
+      this.sizeInViewportLines,
+      YellowRGBA,
+    );
+  }
+}
+
 class App implements Destroyable {
   eman = new Eman();
 
@@ -204,6 +234,9 @@ class App implements Destroyable {
   async boot() {
     const vp = new ViewportMan(useRootElement);
     const c1 = new Circle(this.eman);
+    const t1 = new TextEntity(this.eman);
+    t1.setText('Hello', vv2(50, 0), 30);
+    t1.movement.acel.y = asViewportUnits(-1);
     const shaker = new ScreenShake(this.eman);
     const { stop } = createGameLoop({
       drawTime: 1000 / 60,
