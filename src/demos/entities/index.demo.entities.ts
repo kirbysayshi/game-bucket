@@ -7,6 +7,8 @@ import {
   distance,
   inertia,
   set,
+  solveDrag,
+  translate,
   v2,
 } from 'pocket-physics';
 import { ViewportMan } from '../shared/viewport';
@@ -28,6 +30,8 @@ import { range } from '../shared/range';
 import { makeMovementCmp } from '../../components/MovementCmp';
 import { makeIntegratable } from '../shared/make-integratable';
 import { YellowRGBA } from '../../theme';
+import { setVelocity } from '../../phys-utils';
+import { easeOutCirc } from '../../ease-out-circ';
 
 let app: App | null = null;
 
@@ -228,6 +232,58 @@ class TextEntity extends Entity {
   }
 }
 
+class ParticleEntity extends Entity {
+  movement = makeIntegratable();
+  radius = asViewportUnits(1);
+  private initialAge = 0;
+  private age = 0;
+
+  setLifespan(ms: number) {
+    this.initialAge = ms;
+    this.age = ms;
+  }
+
+  update(dt: number) {
+    accelerate(this.movement, dt);
+    inertia(this.movement);
+    solveDrag(this.movement, 0.9);
+
+    this.age -= dt;
+    if (this.age <= 0) {
+      this.destroy();
+    }
+  }
+
+  draw(interp: number, vp: ViewportMan) {
+    debugDrawIntegratable(
+      vp.v,
+      vp.v.dprCanvas.ctx,
+      this.movement,
+      interp,
+      this.radius,
+      easeOutCirc(this.age / this.initialAge, 0, 1, this.initialAge),
+    );
+  }
+}
+
+class ParticleBurst extends Entity {
+  constructor(eman: Eman, pos: ViewportUnitVector2, count: number) {
+    super(eman);
+    for (let i = 0; i < count; i++) {
+      const p = new ParticleEntity(eman);
+      p.setLifespan(range(100, 300));
+      copy(p.movement.cpos, pos);
+      copy(p.movement.ppos, pos);
+      set(p.movement.acel, range(-8, 8), range(-8, 8));
+    }
+  }
+
+  update(dt: number): void {
+    // immediately destroy self since particles have been emitted!
+    this.destroy();
+  }
+}
+
 class App implements Destroyable {
   eman = new Eman();
 
@@ -276,8 +332,6 @@ class App implements Destroyable {
     addEventListener(
       'click',
       (ev) => {
-        // shaker.shake(5, 200, Math.PI / 8);
-
         // How to pick from screen space to world:
 
         // canvas/element space
@@ -295,7 +349,7 @@ class App implements Destroyable {
 
         // world space
         const worldX = vp.v.camera.target.x + vpFrustrumizedX;
-        const worldY = vp.v.camera.target.y + vpFrustrumizedY;
+        const worldY = vp.v.camera.target.y - vpFrustrumizedY;
 
         const cameraSpace = vv2(vpFrustrumizedX, vpFrustrumizedY);
         const worldSpace = vv2(worldX, worldY);
@@ -306,7 +360,10 @@ class App implements Destroyable {
         const d = distance(cameraSpace, vv2(0, 0));
 
         // shake according to distance
-        shaker.shake(d, 200, Math.PI / 8);
+        shaker.shake(d, 200, 0);
+
+        // burst at mouse position in world
+        const p0 = new ParticleBurst(this.eman, worldSpace, 10);
       },
       { signal: this.eventsOff.signal },
     );

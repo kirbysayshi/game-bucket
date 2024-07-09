@@ -18,9 +18,10 @@ export function debugDrawIntegratable(
   cmp: VelocityDerivable,
   interp: number,
   radius: ViewportUnits = asViewportUnits(1),
+  opacity: number = 0.2,
 ) {
   ctx.beginPath();
-  ctx.fillStyle = 'rgba(0,0,255,0.2)';
+  ctx.fillStyle = `rgba(0,0,255,${opacity})`;
   ctx.arc(
     toProjectedPixels(
       vp,
