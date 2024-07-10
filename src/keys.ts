@@ -7,6 +7,8 @@ type Codes =
   | 'KeyA'
   | 'KeyS'
   | 'KeyD'
+  | 'KeyQ'
+  | 'KeyE'
   | 'ArrowRight'
   | 'ArrowLeft'
   | 'ShiftLeft'
@@ -36,4 +38,8 @@ listen(window, 'keyup', (ev) => {
 
 export function getKeyInputs() {
   return keyInputs;
+}
+
+export function isKeyDown(code: Codes) {
+  return keyInputs[code] ?? false;
 }

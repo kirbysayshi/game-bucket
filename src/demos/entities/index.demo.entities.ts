@@ -3,6 +3,7 @@ import {
   Integratable,
   Vector2,
   accelerate,
+  add,
   copy,
   distance,
   inertia,
@@ -32,6 +33,7 @@ import { makeIntegratable } from '../shared/make-integratable';
 import { YellowRGBA } from '../../theme';
 import { setVelocity } from '../../phys-utils';
 import { easeOutCirc } from '../../ease-out-circ';
+import { isKeyDown } from '../../keys';
 
 let app: App | null = null;
 
@@ -97,7 +99,7 @@ interface Entity {
 abstract class Entity implements Updatable, Destroyable, Drawable, Initable {
   id;
 
-  constructor(private eman: Eman) {
+  constructor(private eman: EntityMan) {
     this.id = eman.eidman.createEntityId();
     eman.register(this);
     this.init();
@@ -113,7 +115,7 @@ abstract class Entity implements Updatable, Destroyable, Drawable, Initable {
   }
 }
 
-class Eman<T extends Entity = Entity> {
+class EntityMan<T extends Entity = Entity> {
   private entities: T[] = [];
 
   eidman = new EntityIdMan();
@@ -267,7 +269,7 @@ class ParticleEntity extends Entity {
 }
 
 class ParticleBurst extends Entity {
-  constructor(eman: Eman, pos: ViewportUnitVector2, count: number) {
+  constructor(eman: EntityMan, pos: ViewportUnitVector2, count: number) {
     super(eman);
     for (let i = 0; i < count; i++) {
       const p = new ParticleEntity(eman);
@@ -284,8 +286,59 @@ class ParticleBurst extends Entity {
   }
 }
 
+class Ship extends Entity {
+  movement = makeIntegratable();
+  radius = asViewportUnits(2);
+  rotation = 0;
+
+  constructor(eman: EntityMan) {
+    super(eman);
+    translate(vv2(0, -20), this.movement.cpos, this.movement.ppos);
+  }
+
+  update(dt: number) {
+    accelerate(this.movement, dt);
+    inertia(this.movement);
+    solveDrag(this.movement, 0.9);
+  }
+
+  draw(interp: number, vp: ViewportMan) {
+    // TODO: rotation. either draw a nub or convert to a VerletBagEntity
+
+    debugDrawIntegratable(
+      vp.v,
+      vp.v.dprCanvas.ctx,
+      this.movement,
+      interp,
+      this.radius,
+    );
+  }
+
+  translate(dir: 'forward' | 'back' | 'left' | 'right') {
+    // TODO: rotate acel according to rotation
+
+    const power = 0.5;
+    let acel;
+    if (dir === 'forward') acel = vv2(0, power);
+    else if (dir === 'back') acel = vv2(0, -power);
+    else if (dir === 'left') acel = vv2(-power, 0);
+    else if (dir === 'right') acel = vv2(power, 0);
+    else return;
+    add(this.movement.acel, this.movement.acel, acel);
+  }
+
+  rotate(dir: 'left' | 'right') {
+    const power = 0.1;
+    let rot;
+    if (dir === 'left') rot = -power;
+    else if (dir === 'right') rot = power;
+    else return;
+    this.rotation += rot;
+  }
+}
+
 class App implements Destroyable {
-  eman = new Eman();
+  eman = new EntityMan();
 
   stop = () => {};
   eventsOff = new AbortController();
@@ -297,11 +350,20 @@ class App implements Destroyable {
     t1.setText('Hello', vv2(50, 0), 30);
     t1.movement.acel.y = asViewportUnits(-1);
     const shaker = new ScreenShake(this.eman);
+    const ship = new Ship(this.eman);
     const { stop } = createGameLoop({
       drawTime: 1000 / 60,
       updateTime: 1000 / 60,
       update: (dt) => {
         this.eman.update(dt);
+
+        // keyboard controls
+        isKeyDown('KeyW') && ship.translate('forward');
+        isKeyDown('KeyS') && ship.translate('back');
+        isKeyDown('KeyA') && ship.translate('left');
+        isKeyDown('KeyD') && ship.translate('right');
+        isKeyDown('KeyQ') && ship.rotate('left');
+        isKeyDown('KeyE') && ship.rotate('right');
       },
       draw: (interp) => {
         clearScreen(vp.v);
