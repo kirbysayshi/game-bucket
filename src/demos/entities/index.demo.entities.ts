@@ -7,6 +7,7 @@ import {
   copy,
   distance,
   inertia,
+  rotate2d,
   set,
   solveDrag,
   translate,
@@ -315,8 +316,6 @@ class Ship extends Entity {
   }
 
   translate(dir: 'forward' | 'back' | 'left' | 'right') {
-    // TODO: rotate acel according to rotation
-
     const power = 0.5;
     let acel;
     if (dir === 'forward') acel = vv2(0, power);
@@ -324,14 +323,17 @@ class Ship extends Entity {
     else if (dir === 'left') acel = vv2(-power, 0);
     else if (dir === 'right') acel = vv2(power, 0);
     else return;
-    add(this.movement.acel, this.movement.acel, acel);
+
+    // rotate acel according to ship's rotation
+    const rotatedAcel = rotate2d(vv2(), acel, vv2(), this.rotation);
+    add(this.movement.acel, this.movement.acel, rotatedAcel);
   }
 
   rotate(dir: 'left' | 'right') {
-    const power = 0.1;
+    const power = 0.01;
     let rot;
-    if (dir === 'left') rot = -power;
-    else if (dir === 'right') rot = power;
+    if (dir === 'left') rot = power;
+    else if (dir === 'right') rot = -power;
     else return;
     this.rotation += rot;
   }
