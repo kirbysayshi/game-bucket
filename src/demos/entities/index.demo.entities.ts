@@ -2,6 +2,7 @@ import ScienceHalt from 'science-halt';
 import {
   Integratable,
   Vector2,
+  VelocityDerivable,
   accelerate,
   add,
   copy,
@@ -304,14 +305,36 @@ class Ship extends Entity {
   }
 
   draw(interp: number, vp: ViewportMan) {
-    // TODO: rotation. either draw a nub or convert to a VerletBagEntity
-
     debugDrawIntegratable(
       vp.v,
       vp.v.dprCanvas.ctx,
       this.movement,
       interp,
       this.radius,
+    );
+
+    // draw a nub to represent the rotation direction of the ship
+
+    const nubDist = asViewportUnits(2);
+    const vd: VelocityDerivable = {
+      cpos: vv2(0, nubDist),
+      ppos: vv2(0, nubDist),
+    };
+
+    // rotate acel according to ship's rotation
+    rotate2d(vd.cpos, vd.cpos, vv2(), this.rotation);
+    rotate2d(vd.ppos, vd.ppos, vv2(), this.rotation);
+
+    // translate to ship's position
+    add(vd.cpos, vd.cpos, this.movement.cpos);
+    add(vd.ppos, vd.ppos, this.movement.ppos);
+
+    debugDrawIntegratable(
+      vp.v,
+      vp.v.dprCanvas.ctx,
+      vd,
+      interp,
+      asViewportUnits(0.5),
     );
   }
 
@@ -330,7 +353,7 @@ class Ship extends Entity {
   }
 
   rotate(dir: 'left' | 'right') {
-    const power = 0.01;
+    const power = 0.1;
     let rot;
     if (dir === 'left') rot = power;
     else if (dir === 'right') rot = -power;
