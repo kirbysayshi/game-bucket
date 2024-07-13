@@ -36,6 +36,8 @@ import { YellowRGBA } from '../../theme';
 import { setVelocity } from '../../phys-utils';
 import { easeOutCirc } from '../../ease-out-circ';
 import { isKeyDown } from '../../keys';
+import { easeInCirc } from '../../ease-in-circ';
+import { easeInExpo } from '../../ease-in-expo';
 
 let app: App | null = null;
 
@@ -362,40 +364,70 @@ class Ship extends Entity {
   }
 }
 
+/**
+ * @param t current time
+ * @param b beginning value
+ * @param c total change in value
+ * @param d total duration of easing
+ */
+type EasingFn = (t: number, b: number, c: number, d: number) => number;
+
+class Tween {
+  constructor(private ease: EasingFn = (t, b, c, d) => b + (c - b) * (t / d)) {}
+}
+
+class SceneTransition extends Entity {}
+
+class Level0 extends Entity {}
+
+class Level1 extends Entity {
+  ship;
+
+  constructor(eman: EntityMan) {
+    super(eman);
+    const c1 = new Circle(eman);
+    const t1 = new TextEntity(eman);
+    t1.setText('Hello', vv2(50, 0), 30);
+    t1.movement.acel.y = asViewportUnits(-1);
+
+    this.ship = new Ship(eman);
+  }
+
+  update(dt: number) {
+    // keyboard controls
+    isKeyDown('KeyW') && this.ship.translate('forward');
+    isKeyDown('KeyS') && this.ship.translate('back');
+    isKeyDown('KeyA') && this.ship.translate('left');
+    isKeyDown('KeyD') && this.ship.translate('right');
+    isKeyDown('KeyQ') && this.ship.rotate('left');
+    isKeyDown('KeyE') && this.ship.rotate('right');
+  }
+}
+
 class App implements Destroyable {
   eman = new EntityMan();
+  vp = new ViewportMan(useRootElement);
+  shaker = new ScreenShake(this.eman);
+  level = new Level1(this.eman);
 
   stop = () => {};
   eventsOff = new AbortController();
 
   async boot() {
-    const vp = new ViewportMan(useRootElement);
-    const c1 = new Circle(this.eman);
-    const t1 = new TextEntity(this.eman);
-    t1.setText('Hello', vv2(50, 0), 30);
-    t1.movement.acel.y = asViewportUnits(-1);
-    const shaker = new ScreenShake(this.eman);
-    const ship = new Ship(this.eman);
+    const vp = this.vp;
+
     const { stop } = createGameLoop({
       drawTime: 1000 / 60,
       updateTime: 1000 / 60,
       update: (dt) => {
         this.eman.update(dt);
-
-        // keyboard controls
-        isKeyDown('KeyW') && ship.translate('forward');
-        isKeyDown('KeyS') && ship.translate('back');
-        isKeyDown('KeyA') && ship.translate('left');
-        isKeyDown('KeyD') && ship.translate('right');
-        isKeyDown('KeyQ') && ship.rotate('left');
-        isKeyDown('KeyE') && ship.rotate('right');
       },
       draw: (interp) => {
         clearScreen(vp.v);
-        shaker.specialDraw(interp, vp, 'before');
+        this.shaker.specialDraw(interp, vp, 'before');
         this.eman.draw(interp, vp);
         DrawDebugCamera()(vp);
-        shaker.specialDraw(interp, vp, 'after');
+        this.shaker.specialDraw(interp, vp, 'after');
       },
     });
     this.stop = stop;
@@ -447,7 +479,7 @@ class App implements Destroyable {
         const d = distance(cameraSpace, vv2(0, 0));
 
         // shake according to distance
-        shaker.shake(d, 200, 0);
+        this.shaker.shake(d, 200, 0);
 
         // burst at mouse position in world
         const p0 = new ParticleBurst(this.eman, worldSpace, 10);

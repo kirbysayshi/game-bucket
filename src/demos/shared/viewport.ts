@@ -2,13 +2,20 @@ import { deriveViewportCmp } from '../../components/ViewportCmp';
 
 export class ViewportMan {
   v = deriveViewportCmp();
+  aborter = new AbortController();
 
   constructor(getRootElement: () => HTMLElement) {
     this.v = deriveViewportCmp();
-    window.addEventListener('resize', () =>
-      computeWindowResize(getRootElement),
+    window.addEventListener(
+      'resize',
+      () => computeWindowResize(getRootElement),
+      { signal: this.aborter.signal },
     );
     computeWindowResize(getRootElement);
+  }
+
+  destroy() {
+    this.aborter.abort();
   }
 }
 
