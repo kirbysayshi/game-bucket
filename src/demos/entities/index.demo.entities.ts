@@ -18,13 +18,18 @@ import { ViewportMan } from '../shared/viewport';
 import { createGameLoop } from '../../loop';
 import { listen, useRootElement } from '../../dom';
 import { DrawDebugCamera } from '../shared/DebugDrawCamera';
-import { debugDrawIntegratable } from '../../draw-utils';
+import {
+  debugDrawIntegratable,
+  debugDrawIntegratableRect,
+} from '../../draw-utils';
 import {
   ViewportUnitVector2,
   ViewportUnits,
   asViewportUnits,
   clearScreen,
   drawTextLinesInViewport,
+  restoreNativeCanvasDrawing,
+  toPixelUnits,
   toProjectedPixels,
   toViewportUnits,
   vv2,
@@ -34,10 +39,7 @@ import { makeMovementCmp } from '../../components/MovementCmp';
 import { makeIntegratable } from '../shared/make-integratable';
 import { YellowRGBA } from '../../theme';
 import { setVelocity } from '../../phys-utils';
-import { easeOutCirc } from '../../ease-out-circ';
 import { isKeyDown } from '../../keys';
-import { easeInCirc } from '../../ease-in-circ';
-import { easeInExpo } from '../../ease-in-expo';
 
 let app: App | null = null;
 
@@ -238,6 +240,10 @@ class TextEntity extends Entity {
   }
 }
 
+function easeOutCirc(x: number): number {
+  return Math.sqrt(1 - Math.pow(x - 1, 2));
+}
+
 class ParticleEntity extends Entity {
   movement = makeIntegratable();
   radius = asViewportUnits(1);
@@ -267,7 +273,7 @@ class ParticleEntity extends Entity {
       this.movement,
       interp,
       this.radius,
-      easeOutCirc(this.age / this.initialAge, 0, 1, this.initialAge),
+      0.2 * easeOutCirc(this.age / this.initialAge),
     );
   }
 }
@@ -364,21 +370,159 @@ class Ship extends Entity {
   }
 }
 
-/**
- * @param t current time
- * @param b beginning value
- * @param c total change in value
- * @param d total duration of easing
- */
-type EasingFn = (t: number, b: number, c: number, d: number) => number;
-
-class Tween {
-  constructor(private ease: EasingFn = (t, b, c, d) => b + (c - b) * (t / d)) {}
+function easeInExpo(x: number): number {
+  return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
 }
 
-class SceneTransition extends Entity {}
+class Sig<T> {
+  private owners = new Map<unknown, (it: T) => void>();
+  on(owner: unknown, cb: (it: T) => void) {
+    this.owners.set(owner, cb);
+  }
 
-class Level0 extends Entity {}
+  off(owner: unknown) {
+    this.owners.delete(owner);
+  }
+
+  fire(it: T) {
+    for (const [owner, cb] of this.owners) cb(it);
+  }
+}
+
+class Vector2Tween extends Entity {
+  elapsed = 0;
+  current = v2();
+  state: 'not-started' | 'running' | 'finished' = 'not-started';
+  started = new Sig<void>();
+  ended = new Sig<void>();
+
+  constructor(
+    eman: EntityMan,
+    public durationMs: number,
+    public startValue = v2(),
+    public endValue = v2(),
+    public ease = easeInExpo,
+  ) {
+    super(eman);
+
+    copy(this.current, this.startValue);
+  }
+
+  start() {
+    this.state = 'running';
+    this.started.fire();
+  }
+
+  update(dt: number) {
+    if (this.state !== 'running') return;
+    this.elapsed += dt;
+    if (this.elapsed < this.durationMs) {
+      const t = this.ease(this.elapsed / this.durationMs);
+      this.current.x = asViewportUnits(
+        this.startValue.x + (this.endValue.x - this.startValue.x) * t,
+      );
+      this.current.y = asViewportUnits(
+        this.startValue.y + (this.endValue.y - this.startValue.y) * t,
+      );
+    } else {
+      copy(this.current, this.endValue);
+      this.state = 'finished';
+      this.ended.fire();
+    }
+  }
+
+  destroy() {
+    this.started.off(this);
+    this.ended.off(this);
+  }
+}
+
+class SceneTransition extends Entity {
+  private tween0: Vector2Tween;
+  private tween1: Vector2Tween;
+
+  movement = makeIntegratable();
+  wh = vv2(100, 100);
+
+  constructor(
+    eman: EntityMan,
+    private vp: ViewportMan,
+    private onComplete: () => void,
+  ) {
+    super(eman);
+    this.tween0 = new Vector2Tween(
+      eman,
+      1000,
+      add(vv2(), this.vp.v.camera.target, vv2(-100, 0)),
+      copy(vv2(), this.vp.v.camera.target),
+      easeInExpo,
+    );
+    // timing only
+    this.tween1 = new Vector2Tween(eman, 1000);
+
+    this.tween0.start();
+    this.tween0.ended.on(this, () => this.tween1.start());
+  }
+
+  update(dt: number) {
+    // each tick set tween target to camera position, just in case camera moves
+    copy(this.tween0.endValue, this.vp.v.camera.target);
+
+    // update output
+    copy(this.movement.cpos, this.tween0.current);
+    copy(this.movement.ppos, this.tween0.current);
+
+    if (this.tween1.state === 'finished') {
+      this.destroy();
+      this.onComplete();
+    }
+  }
+
+  draw(interp: number, vp: ViewportMan) {
+    debugDrawIntegratableRect(
+      vp.v,
+      vp.v.dprCanvas.ctx,
+      this.movement,
+      interp,
+      this.wh,
+    );
+  }
+
+  destroy(): void {
+    super.destroy();
+    this.tween0.destroy();
+    this.tween1.destroy();
+  }
+}
+
+class LevelMan {
+  level: Entity | null = null;
+
+  setLevel(level: Entity) {
+    this.level?.destroy();
+    this.level = level;
+  }
+}
+
+class Level0 extends Entity {
+  constructor(
+    eman: EntityMan,
+    private vp: ViewportMan,
+    levelMan: LevelMan,
+  ) {
+    super(eman);
+
+    vp.v.dprCanvas.cvs.addEventListener(
+      'click',
+      () => {
+        new SceneTransition(eman, this.vp, () => {
+          levelMan.setLevel(new Level1(eman));
+        });
+      },
+      { once: true },
+    );
+  }
+}
 
 class Level1 extends Entity {
   ship;
@@ -408,13 +552,15 @@ class App implements Destroyable {
   eman = new EntityMan();
   vp = new ViewportMan(useRootElement);
   shaker = new ScreenShake(this.eman);
-  level = new Level1(this.eman);
+  levelMan = new LevelMan();
 
   stop = () => {};
   eventsOff = new AbortController();
 
   async boot() {
     const vp = this.vp;
+
+    this.levelMan.setLevel(new Level0(this.eman, vp, this.levelMan));
 
     const { stop } = createGameLoop({
       drawTime: 1000 / 60,
@@ -447,6 +593,8 @@ class App implements Destroyable {
       },
       { signal: this.eventsOff.signal },
     );
+
+    // TODO: move to an entity? how to get access to vp and shaker?
 
     addEventListener(
       'click',

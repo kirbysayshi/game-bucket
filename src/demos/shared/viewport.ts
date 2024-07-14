@@ -2,7 +2,7 @@ import { deriveViewportCmp } from '../../components/ViewportCmp';
 
 export class ViewportMan {
   v = deriveViewportCmp();
-  aborter = new AbortController();
+  private aborter = new AbortController();
 
   constructor(getRootElement: () => HTMLElement) {
     this.v = deriveViewportCmp();
