@@ -20,6 +20,7 @@ export function debugDrawIntegratable(
   radius: ViewportUnits = asViewportUnits(1),
   opacity: number = 0.2,
 ) {
+  ctx.save();
   ctx.beginPath();
   ctx.fillStyle = `rgba(0,0,255,${opacity})`;
   ctx.arc(
@@ -38,6 +39,7 @@ export function debugDrawIntegratable(
     Math.PI * 2,
   );
   ctx.fill();
+  ctx.restore();
 }
 
 export function debugDrawIntegratableRect(
@@ -46,9 +48,11 @@ export function debugDrawIntegratableRect(
   cmp: VelocityDerivable,
   interp: number,
   wh: ViewportUnitVector2,
+  opacity = 0.2,
 ) {
+  ctx.save();
   ctx.beginPath();
-  ctx.fillStyle = 'rgba(0,0,255,0.2)';
+  ctx.fillStyle = `rgba(0,0,255,${opacity})`;
 
   const vpX = cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp;
   const vpY = cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp;
@@ -61,6 +65,7 @@ export function debugDrawIntegratableRect(
   const h = toPixelUnits(vp, wh.y);
 
   ctx.fillRect(x, y, w, h);
+  ctx.restore();
 }
 
 function debugDrawPoint(

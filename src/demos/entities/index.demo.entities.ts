@@ -440,6 +440,7 @@ class Vector2Tween extends Entity {
 class SceneTransition extends Entity {
   private tween0: Vector2Tween;
   private tween1: Vector2Tween;
+  private tween2: Vector2Tween;
 
   movement = makeIntegratable();
   wh = vv2(100, 100);
@@ -459,9 +460,16 @@ class SceneTransition extends Entity {
     );
     // timing only
     this.tween1 = new Vector2Tween(eman, 1000);
+    // will be used for opacity
+    this.tween2 = new Vector2Tween(eman, 1000, v2(1, 1), v2(0, 0));
 
     this.tween0.start();
-    this.tween0.ended.on(this, () => this.tween1.start());
+    this.tween0.ended.on(this, () => {
+      this.tween1.start();
+      this.onComplete();
+    });
+    this.tween1.ended.on(this, () => this.tween2.start());
+    this.tween2.ended.on(this, () => this.destroy());
   }
 
   update(dt: number) {
@@ -471,11 +479,6 @@ class SceneTransition extends Entity {
     // update output
     copy(this.movement.cpos, this.tween0.current);
     copy(this.movement.ppos, this.tween0.current);
-
-    if (this.tween1.state === 'finished') {
-      this.destroy();
-      this.onComplete();
-    }
   }
 
   draw(interp: number, vp: ViewportMan) {
@@ -485,6 +488,7 @@ class SceneTransition extends Entity {
       this.movement,
       interp,
       this.wh,
+      this.tween2.current.x,
     );
   }
 
@@ -509,15 +513,21 @@ class Level0 extends Entity {
     eman: EntityMan,
     private vp: ViewportMan,
     levelMan: LevelMan,
+    shaker: ScreenShake,
   ) {
     super(eman);
+
+    const t1 = new TextEntity(eman);
+    t1.setText('Click to Start', vv2(50, -50), 30);
 
     vp.v.dprCanvas.cvs.addEventListener(
       'click',
       () => {
         new SceneTransition(eman, this.vp, () => {
-          levelMan.setLevel(new Level1(eman));
+          levelMan.setLevel(new Level1(eman, vp, shaker));
         });
+
+        t1.destroy();
       },
       { once: true },
     );
@@ -525,9 +535,10 @@ class Level0 extends Entity {
 }
 
 class Level1 extends Entity {
+  eventsOff = new AbortController();
   ship;
 
-  constructor(eman: EntityMan) {
+  constructor(eman: EntityMan, vp: ViewportMan, shaker: ScreenShake) {
     super(eman);
     const c1 = new Circle(eman);
     const t1 = new TextEntity(eman);
@@ -535,66 +546,6 @@ class Level1 extends Entity {
     t1.movement.acel.y = asViewportUnits(-1);
 
     this.ship = new Ship(eman);
-  }
-
-  update(dt: number) {
-    // keyboard controls
-    isKeyDown('KeyW') && this.ship.translate('forward');
-    isKeyDown('KeyS') && this.ship.translate('back');
-    isKeyDown('KeyA') && this.ship.translate('left');
-    isKeyDown('KeyD') && this.ship.translate('right');
-    isKeyDown('KeyQ') && this.ship.rotate('left');
-    isKeyDown('KeyE') && this.ship.rotate('right');
-  }
-}
-
-class App implements Destroyable {
-  eman = new EntityMan();
-  vp = new ViewportMan(useRootElement);
-  shaker = new ScreenShake(this.eman);
-  levelMan = new LevelMan();
-
-  stop = () => {};
-  eventsOff = new AbortController();
-
-  async boot() {
-    const vp = this.vp;
-
-    this.levelMan.setLevel(new Level0(this.eman, vp, this.levelMan));
-
-    const { stop } = createGameLoop({
-      drawTime: 1000 / 60,
-      updateTime: 1000 / 60,
-      update: (dt) => {
-        this.eman.update(dt);
-      },
-      draw: (interp) => {
-        clearScreen(vp.v);
-        this.shaker.specialDraw(interp, vp, 'before');
-        this.eman.draw(interp, vp);
-        DrawDebugCamera()(vp);
-        this.shaker.specialDraw(interp, vp, 'after');
-      },
-    });
-    this.stop = stop;
-
-    if (process.env.NODE_ENV !== 'production') {
-      ScienceHalt(() => this.destroy());
-    }
-
-    addEventListener(
-      'keydown',
-      (ev) => {
-        if (ev.key === 'ArrowRight') {
-          vp.v.camera.target.x = (1 + vp.v.camera.target.x) as ViewportUnits;
-        } else if (ev.key === 'ArrowLeft') {
-          vp.v.camera.target.x = (-1 + vp.v.camera.target.x) as ViewportUnits;
-        }
-      },
-      { signal: this.eventsOff.signal },
-    );
-
-    // TODO: move to an entity? how to get access to vp and shaker?
 
     addEventListener(
       'click',
@@ -627,10 +578,71 @@ class App implements Destroyable {
         const d = distance(cameraSpace, vv2(0, 0));
 
         // shake according to distance
-        this.shaker.shake(d, 200, 0);
+        shaker.shake(d, 200, 0);
 
         // burst at mouse position in world
-        const p0 = new ParticleBurst(this.eman, worldSpace, 10);
+        const p0 = new ParticleBurst(eman, worldSpace, 10);
+      },
+      { signal: this.eventsOff.signal },
+    );
+  }
+
+  update(dt: number) {
+    // keyboard controls
+    isKeyDown('KeyW') && this.ship.translate('forward');
+    isKeyDown('KeyS') && this.ship.translate('back');
+    isKeyDown('KeyA') && this.ship.translate('left');
+    isKeyDown('KeyD') && this.ship.translate('right');
+    isKeyDown('KeyQ') && this.ship.rotate('left');
+    isKeyDown('KeyE') && this.ship.rotate('right');
+  }
+}
+
+class App implements Destroyable {
+  // TODO: move these into a GameContext interface. Almost everything needs them.
+  eman = new EntityMan();
+  vp = new ViewportMan(useRootElement);
+  shaker = new ScreenShake(this.eman);
+  levelMan = new LevelMan();
+
+  stop = () => {};
+  eventsOff = new AbortController();
+
+  async boot() {
+    const vp = this.vp;
+
+    this.levelMan.setLevel(
+      new Level0(this.eman, vp, this.levelMan, this.shaker),
+    );
+
+    const { stop } = createGameLoop({
+      drawTime: 1000 / 60,
+      updateTime: 1000 / 60,
+      update: (dt) => {
+        this.eman.update(dt);
+      },
+      draw: (interp) => {
+        clearScreen(vp.v);
+        this.shaker.specialDraw(interp, vp, 'before');
+        this.eman.draw(interp, vp);
+        DrawDebugCamera()(vp);
+        this.shaker.specialDraw(interp, vp, 'after');
+      },
+    });
+    this.stop = stop;
+
+    if (process.env.NODE_ENV !== 'production') {
+      ScienceHalt(() => this.destroy());
+    }
+
+    addEventListener(
+      'keydown',
+      (ev) => {
+        if (ev.key === 'ArrowRight') {
+          vp.v.camera.target.x = (1 + vp.v.camera.target.x) as ViewportUnits;
+        } else if (ev.key === 'ArrowLeft') {
+          vp.v.camera.target.x = (-1 + vp.v.camera.target.x) as ViewportUnits;
+        }
       },
       { signal: this.eventsOff.signal },
     );
