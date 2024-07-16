@@ -10,7 +10,8 @@
   "packageManager": "pnpm@9.1.0",
   "dependencies": {
     "pocket-physics": "^11.0.0",
-    "science-halt": "^0.2.0"
+    "science-halt": "^0.2.0",
+    "zzfx": "^1.3.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.22.10",

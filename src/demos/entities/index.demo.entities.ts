@@ -41,6 +41,13 @@ import { YellowRGBA } from '../../theme';
 import { setVelocity } from '../../phys-utils';
 import { isKeyDown } from '../../keys';
 
+import { zzfx } from 'zzfx';
+
+const SFX = {
+  // prettier-ignore
+  hit: () => zzfx(...[2.2,,322,.02,.1,,,3,7,-18,,,.06,1.8,34,.4,.14,.88,.01,.06]), // Hit 13
+};
+
 let app: App | null = null;
 
 export async function boot() {
@@ -581,6 +588,7 @@ class Level1 extends Entity {
 
         // burst at mouse position in world
         const p0 = new ParticleBurst(eman, worldSpace, 10);
+        SFX.hit();
       },
       { signal: this.eventsOff.signal },
     );
