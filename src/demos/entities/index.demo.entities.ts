@@ -509,22 +509,19 @@ class LevelMan {
 }
 
 class Level0 extends Entity {
-  constructor(
-    eman: EntityMan,
-    private vp: ViewportMan,
-    levelMan: LevelMan,
-    shaker: ScreenShake,
-  ) {
+  constructor(eman: EntityMan, context: GameContext) {
     super(eman);
 
     const t1 = new TextEntity(eman);
     t1.setText('Click to Start', vv2(50, -50), 30);
 
+    const { vp, levelMan } = context;
+
     vp.v.dprCanvas.cvs.addEventListener(
       'click',
       () => {
-        new SceneTransition(eman, this.vp, () => {
-          levelMan.setLevel(new Level1(eman, vp, shaker));
+        new SceneTransition(eman, vp, () => {
+          levelMan.setLevel(new Level1(eman, context));
         });
 
         t1.destroy();
@@ -538,7 +535,7 @@ class Level1 extends Entity {
   eventsOff = new AbortController();
   ship;
 
-  constructor(eman: EntityMan, vp: ViewportMan, shaker: ScreenShake) {
+  constructor(eman: EntityMan, context: GameContext) {
     super(eman);
     const c1 = new Circle(eman);
     const t1 = new TextEntity(eman);
@@ -550,6 +547,8 @@ class Level1 extends Entity {
     addEventListener(
       'click',
       (ev) => {
+        const { vp, shaker } = context;
+
         // How to pick from screen space to world:
 
         // canvas/element space
@@ -598,35 +597,44 @@ class Level1 extends Entity {
   }
 }
 
-class App implements Destroyable {
-  // TODO: move these into a GameContext interface. Almost everything needs them.
-  eman = new EntityMan();
-  vp = new ViewportMan(useRootElement);
-  shaker = new ScreenShake(this.eman);
-  levelMan = new LevelMan();
+interface GameContext {
+  eman: EntityMan;
+  vp: ViewportMan;
+  shaker: ScreenShake;
+  levelMan: LevelMan;
+}
 
+class App implements Destroyable {
+  context: GameContext;
   stop = () => {};
   eventsOff = new AbortController();
 
-  async boot() {
-    const vp = this.vp;
+  constructor() {
+    const eman = new EntityMan();
+    this.context = {
+      eman,
+      vp: new ViewportMan(useRootElement),
+      shaker: new ScreenShake(eman),
+      levelMan: new LevelMan(),
+    };
+  }
 
-    this.levelMan.setLevel(
-      new Level0(this.eman, vp, this.levelMan, this.shaker),
-    );
+  async boot() {
+    const { eman, vp, shaker, levelMan } = this.context;
+    levelMan.setLevel(new Level0(eman, this.context));
 
     const { stop } = createGameLoop({
       drawTime: 1000 / 60,
       updateTime: 1000 / 60,
       update: (dt) => {
-        this.eman.update(dt);
+        eman.update(dt);
       },
       draw: (interp) => {
         clearScreen(vp.v);
-        this.shaker.specialDraw(interp, vp, 'before');
-        this.eman.draw(interp, vp);
+        shaker.specialDraw(interp, vp, 'before');
+        eman.draw(interp, vp);
         DrawDebugCamera()(vp);
-        this.shaker.specialDraw(interp, vp, 'after');
+        shaker.specialDraw(interp, vp, 'after');
       },
     });
     this.stop = stop;
