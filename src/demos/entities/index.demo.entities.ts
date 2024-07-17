@@ -251,6 +251,10 @@ function easeOutCirc(x: number): number {
   return Math.sqrt(1 - Math.pow(x - 1, 2));
 }
 
+function easeInOutSine(x: number): number {
+  return -(Math.cos(Math.PI * x) - 1) / 2;
+}
+
 class ParticleEntity extends Entity {
   movement = makeIntegratable();
   radius = asViewportUnits(1);
@@ -377,6 +381,57 @@ class Ship extends Entity {
   }
 }
 
+class HoveringCircle extends Entity {
+  private movement = makeIntegratable();
+  private radius = asViewportUnits(4);
+
+  private accumulator = 0;
+  private tween;
+
+  mode: 'acel' | 'tween' = 'acel';
+
+  constructor(eman: EntityMan, initial = vv2(5, -10)) {
+    super(eman);
+    this.tween = new BoomerangVector2Tween(
+      eman,
+      2000,
+      copy(vv2(), initial),
+      vv2(initial.x, initial.y + 2),
+      easeInOutSine,
+    );
+    this.tween.start();
+    copy(this.movement.cpos, initial);
+    copy(this.movement.ppos, initial);
+  }
+
+  update(dt: number) {
+    accelerate(this.movement, dt);
+    inertia(this.movement);
+    solveDrag(this.movement, 0.9);
+
+    if (this.mode === 'acel') {
+      this.accumulator += dt;
+      const hover = 0.01;
+      const acel = vv2(0, hover * Math.sin(this.accumulator / 1000));
+      add(this.movement.acel, this.movement.acel, acel);
+    } else {
+      this.tween.update(dt);
+      copy(this.movement.cpos, this.tween.current);
+      copy(this.movement.ppos, this.tween.current);
+    }
+  }
+
+  draw(interp: number, vp: ViewportMan) {
+    debugDrawIntegratable(
+      vp.v,
+      vp.v.dprCanvas.ctx,
+      this.movement,
+      interp,
+      this.radius,
+    );
+  }
+}
+
 function easeInExpo(x: number): number {
   return x === 0 ? 0 : Math.pow(2, 10 * x - 10);
 }
@@ -441,6 +496,25 @@ class Vector2Tween extends Entity {
   destroy() {
     this.started.off(this);
     this.ended.off(this);
+  }
+}
+
+class BoomerangVector2Tween extends Vector2Tween {
+  update(dt: number) {
+    super.update(dt);
+
+    if (this.state === 'finished') {
+      // swap start and end
+      const temp = this.startValue;
+      this.startValue = this.endValue;
+      this.endValue = temp;
+
+      // reset elapsed time
+      this.elapsed = 0;
+
+      // start again
+      this.start();
+    }
   }
 }
 
@@ -550,6 +624,10 @@ class Level1 extends Entity {
     t1.movement.acel.y = asViewportUnits(-1);
 
     this.ship = new Ship(eman);
+
+    const h0 = new HoveringCircle(eman);
+    const h1 = new HoveringCircle(eman, vv2(9, 0));
+    h1.mode = 'tween';
 
     addEventListener(
       'click',
