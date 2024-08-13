@@ -24,7 +24,7 @@ import { createGameLoop } from '../../loop';
 import { DrawTimeHz, UpdateTimeHz } from '../../loopConstants';
 import { ViewportMan } from '../shared/viewport';
 import { useRootElement } from '../../dom';
-import { DrawDebugCamera } from '../shared/DebugDrawCamera';
+import { DrawDebugCamera } from '../shared/DrawDebugCamera';
 import {
   clearScreen,
   moveViewportCamera,

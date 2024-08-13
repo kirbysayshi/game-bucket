@@ -32,7 +32,7 @@ import { ViewportMan } from '../shared/viewport';
 import { getRandom } from '../../rng';
 import { range } from '../shared/range';
 import { debugDrawIntegratable } from '../../draw-utils';
-import { DrawDebugCamera } from '../shared/DebugDrawCamera';
+import { DrawDebugCamera } from '../shared/DrawDebugCamera';
 import { YellowRGBA } from '../../theme';
 
 let game: Game | null = null;

@@ -17,7 +17,7 @@ import {
 import { ViewportMan } from '../shared/viewport';
 import { createGameLoop } from '../../loop';
 import { listen, useRootElement } from '../../dom';
-import { DrawDebugCamera } from '../shared/DebugDrawCamera';
+import { DrawDebugCamera } from '../shared/DrawDebugCamera';
 import {
   debugDrawIntegratable,
   debugDrawIntegratableRect,
@@ -405,15 +405,15 @@ class HoveringCircle extends Entity {
   }
 
   update(dt: number) {
-    accelerate(this.movement, dt);
-    inertia(this.movement);
-    solveDrag(this.movement, 0.9);
-
     if (this.mode === 'acel') {
       this.accumulator += dt;
       const hover = 0.01;
       const acel = vv2(0, hover * Math.sin(this.accumulator / 1000));
       add(this.movement.acel, this.movement.acel, acel);
+
+      accelerate(this.movement, dt);
+      inertia(this.movement);
+      solveDrag(this.movement, 0.9);
     } else {
       this.tween.update(dt);
       copy(this.movement.cpos, this.tween.current);
