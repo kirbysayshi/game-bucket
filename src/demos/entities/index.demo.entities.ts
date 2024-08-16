@@ -18,30 +18,19 @@ import { ViewportMan } from '../shared/viewport';
 import { createGameLoop } from '../../loop';
 import { listen, useRootElement } from '../../dom';
 import { DrawDebugCamera } from '../shared/DrawDebugCamera';
-import {
-  debugDrawIntegratable,
-  debugDrawIntegratableRect,
-} from '../../draw-utils';
-import {
-  ViewportUnitVector2,
-  ViewportUnits,
-  asViewportUnits,
-  clearScreen,
-  drawTextLinesInViewport,
-  restoreNativeCanvasDrawing,
-  toPixelUnits,
-  toProjectedPixels,
-  toViewportUnits,
-  vv2,
-} from '../../components/ViewportCmp';
 import { range } from '../shared/range';
-import { makeMovementCmp } from '../../components/MovementCmp';
-import { makeIntegratable } from '../shared/make-integratable';
-import { YellowRGBA } from '../../theme';
-import { setVelocity } from '../../phys-utils';
 import { isKeyDown } from '../../keys';
 
 import { zzfx } from 'zzfx';
+import {
+  asPixels,
+  asWorldUnits,
+  Camera2D,
+  drawWorldText2,
+  WorldUnits,
+  WorldUnitVector2,
+  wv2,
+} from '../shared/Camera2d';
 
 const SFX = {
   // prettier-ignore
@@ -156,9 +145,17 @@ class EntityMan<T extends Entity = Entity> {
   }
 }
 
+export function makeIntegratable(initial = wv2()) {
+  return {
+    cpos: copy(wv2(), initial),
+    ppos: copy(wv2(), initial),
+    acel: wv2(),
+  };
+}
+
 class Circle extends Entity {
   movement: Integratable = makeIntegratable();
-  radius = asViewportUnits(10);
+  radius = asWorldUnits(10);
 
   update(dt: number) {
     accelerate(this.movement, dt);
@@ -167,13 +164,33 @@ class Circle extends Entity {
 
   draw(interp: number, vp: ViewportMan) {
     debugDrawIntegratable(
-      vp.v,
       vp.v.dprCanvas.ctx,
       this.movement,
       interp,
       this.radius,
     );
   }
+}
+
+export function debugDrawIntegratable(
+  ctx: CanvasRenderingContext2D,
+  cmp: VelocityDerivable,
+  interp: number,
+  radius: WorldUnits = asWorldUnits(1),
+  opacity: number = 0.2,
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = `rgba(0,0,255,${opacity})`;
+  ctx.arc(
+    cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp,
+    cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp,
+    radius,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fill();
+  ctx.restore();
 }
 
 class ScreenShake extends Entity {
@@ -223,7 +240,7 @@ class TextEntity extends Entity {
 
   movement = makeIntegratable();
 
-  setText(text: string, pos: ViewportUnitVector2, sizeInViewportLines: number) {
+  setText(text: string, pos: WorldUnitVector2, sizeInViewportLines: number) {
     this.text = text;
     copy(this.movement.cpos, pos);
     copy(this.movement.ppos, pos);
@@ -236,13 +253,29 @@ class TextEntity extends Entity {
   }
 
   draw(interp: number, vp: ViewportMan) {
-    drawTextLinesInViewport(
-      vp.v,
+    // drawWorldText(
+    //   vp.v.dprCanvas.ctx,
+    //   vp.camera.getRotation(),
+    //   this.text,
+    //   this.movement.cpos.x,
+    //   this.movement.cpos.y,
+    //   20,
+    //   'center',
+    // );
+    drawWorldText2(
+      vp.v.dprCanvas.ctx,
+      vp.camera,
+      vp.v.height,
       this.text,
-      this.movement.cpos,
-      'center',
+      this.movement.cpos.x,
+      this.movement.cpos.y,
       this.sizeInViewportLines,
-      YellowRGBA,
+      (ctx, fontSizePx) => {
+        ctx.fillStyle = 'black';
+        ctx.font = `${fontSizePx}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+      },
     );
   }
 }
@@ -257,7 +290,7 @@ function easeInOutSine(x: number): number {
 
 class ParticleEntity extends Entity {
   movement = makeIntegratable();
-  radius = asViewportUnits(1);
+  radius = asWorldUnits(1);
   private initialAge = 0;
   private age = 0;
 
@@ -279,7 +312,6 @@ class ParticleEntity extends Entity {
 
   draw(interp: number, vp: ViewportMan) {
     debugDrawIntegratable(
-      vp.v,
       vp.v.dprCanvas.ctx,
       this.movement,
       interp,
@@ -290,7 +322,7 @@ class ParticleEntity extends Entity {
 }
 
 class ParticleBurst extends Entity {
-  constructor(eman: EntityMan, pos: ViewportUnitVector2, count: number) {
+  constructor(eman: EntityMan, pos: WorldUnitVector2, count: number) {
     super(eman);
     for (let i = 0; i < count; i++) {
       const p = new ParticleEntity(eman);
@@ -309,23 +341,27 @@ class ParticleBurst extends Entity {
 
 class Ship extends Entity {
   movement = makeIntegratable();
-  radius = asViewportUnits(2);
+  radius = asWorldUnits(2);
   rotation = 0;
 
-  constructor(eman: EntityMan) {
+  constructor(
+    eman: EntityMan,
+    private camera: Camera2D,
+  ) {
     super(eman);
-    translate(vv2(0, -20), this.movement.cpos, this.movement.ppos);
+    translate(wv2(0, 0), this.movement.cpos, this.movement.ppos);
   }
 
   update(dt: number) {
     accelerate(this.movement, dt);
     inertia(this.movement);
     solveDrag(this.movement, 0.9);
+
+    this.camera.setPosition(this.movement.ppos);
   }
 
   draw(interp: number, vp: ViewportMan) {
     debugDrawIntegratable(
-      vp.v,
       vp.v.dprCanvas.ctx,
       this.movement,
       interp,
@@ -334,69 +370,64 @@ class Ship extends Entity {
 
     // draw a nub to represent the rotation direction of the ship
 
-    const nubDist = asViewportUnits(2);
+    const nubDist = asWorldUnits(-2);
     const vd: VelocityDerivable = {
-      cpos: vv2(0, nubDist),
-      ppos: vv2(0, nubDist),
+      cpos: wv2(0, nubDist),
+      ppos: wv2(0, nubDist),
     };
 
     // rotate acel according to ship's rotation
-    rotate2d(vd.cpos, vd.cpos, vv2(), this.rotation);
-    rotate2d(vd.ppos, vd.ppos, vv2(), this.rotation);
+    rotate2d(vd.cpos, vd.cpos, wv2(), this.rotation);
+    rotate2d(vd.ppos, vd.ppos, wv2(), this.rotation);
 
     // translate to ship's position
     add(vd.cpos, vd.cpos, this.movement.cpos);
     add(vd.ppos, vd.ppos, this.movement.ppos);
 
-    debugDrawIntegratable(
-      vp.v,
-      vp.v.dprCanvas.ctx,
-      vd,
-      interp,
-      asViewportUnits(0.5),
-    );
+    debugDrawIntegratable(vp.v.dprCanvas.ctx, vd, interp, asWorldUnits(0.5));
   }
 
   translate(dir: 'forward' | 'back' | 'left' | 'right') {
     const power = 0.5;
     let acel;
-    if (dir === 'forward') acel = vv2(0, power);
-    else if (dir === 'back') acel = vv2(0, -power);
-    else if (dir === 'left') acel = vv2(-power, 0);
-    else if (dir === 'right') acel = vv2(power, 0);
+    if (dir === 'forward') acel = wv2(0, -power);
+    else if (dir === 'back') acel = wv2(0, power);
+    else if (dir === 'left') acel = wv2(-power, 0);
+    else if (dir === 'right') acel = wv2(power, 0);
     else return;
 
     // rotate acel according to ship's rotation
-    const rotatedAcel = rotate2d(vv2(), acel, vv2(), this.rotation);
+    const rotatedAcel = rotate2d(wv2(), acel, wv2(), this.rotation);
     add(this.movement.acel, this.movement.acel, rotatedAcel);
   }
 
   rotate(dir: 'left' | 'right') {
     const power = 0.1;
     let rot;
-    if (dir === 'left') rot = power;
-    else if (dir === 'right') rot = -power;
+    if (dir === 'left') rot = -power;
+    else if (dir === 'right') rot = power;
     else return;
     this.rotation += rot;
+    this.camera.rotate(asWorldUnits(rot));
   }
 }
 
 class HoveringCircle extends Entity {
   private movement = makeIntegratable();
-  private radius = asViewportUnits(4);
+  private radius = asWorldUnits(4);
 
   private accumulator = 0;
   private tween;
 
   mode: 'acel' | 'tween' = 'acel';
 
-  constructor(eman: EntityMan, initial = vv2(5, -10)) {
+  constructor(eman: EntityMan, initial = wv2(5, -10)) {
     super(eman);
     this.tween = new BoomerangVector2Tween(
       eman,
       2000,
-      copy(vv2(), initial),
-      vv2(initial.x, initial.y + 2),
+      copy(wv2(), initial),
+      wv2(initial.x, initial.y + 2),
       easeInOutSine,
     );
     this.tween.start();
@@ -408,7 +439,7 @@ class HoveringCircle extends Entity {
     if (this.mode === 'acel') {
       this.accumulator += dt;
       const hover = 0.01;
-      const acel = vv2(0, hover * Math.sin(this.accumulator / 1000));
+      const acel = wv2(0, hover * Math.sin(this.accumulator / 1000));
       add(this.movement.acel, this.movement.acel, acel);
 
       accelerate(this.movement, dt);
@@ -423,7 +454,6 @@ class HoveringCircle extends Entity {
 
   draw(interp: number, vp: ViewportMan) {
     debugDrawIntegratable(
-      vp.v,
       vp.v.dprCanvas.ctx,
       this.movement,
       interp,
@@ -480,10 +510,10 @@ class Vector2Tween extends Entity {
     this.elapsed += dt;
     if (this.elapsed < this.durationMs) {
       const t = this.ease(this.elapsed / this.durationMs);
-      this.current.x = asViewportUnits(
+      this.current.x = asWorldUnits(
         this.startValue.x + (this.endValue.x - this.startValue.x) * t,
       );
-      this.current.y = asViewportUnits(
+      this.current.y = asWorldUnits(
         this.startValue.y + (this.endValue.y - this.startValue.y) * t,
       );
     } else {
@@ -524,7 +554,7 @@ class SceneTransition extends Entity {
   private tween2: Vector2Tween;
 
   movement = makeIntegratable();
-  wh = vv2(100, 100);
+  wh = wv2(100, 100);
 
   constructor(
     eman: EntityMan,
@@ -535,8 +565,8 @@ class SceneTransition extends Entity {
     this.tween0 = new Vector2Tween(
       eman,
       1000,
-      add(vv2(), this.vp.v.camera.target, vv2(-100, 0)),
-      copy(vv2(), this.vp.v.camera.target),
+      add(wv2(), this.vp.camera.getPosition(), wv2(-100, 0)),
+      copy(wv2(), this.vp.camera.getPosition()),
       easeInExpo,
     );
     // timing only
@@ -555,7 +585,7 @@ class SceneTransition extends Entity {
 
   update(dt: number) {
     // each tick set tween target to camera position, just in case camera moves
-    copy(this.tween0.endValue, this.vp.v.camera.target);
+    copy(this.tween0.endValue, this.vp.camera.getPosition());
 
     // update output
     copy(this.movement.cpos, this.tween0.current);
@@ -564,7 +594,6 @@ class SceneTransition extends Entity {
 
   draw(interp: number, vp: ViewportMan) {
     debugDrawIntegratableRect(
-      vp.v,
       vp.v.dprCanvas.ctx,
       this.movement,
       interp,
@@ -578,6 +607,31 @@ class SceneTransition extends Entity {
     this.tween0.destroy();
     this.tween1.destroy();
   }
+}
+
+export function debugDrawIntegratableRect(
+  ctx: CanvasRenderingContext2D,
+  cmp: VelocityDerivable,
+  interp: number,
+  wh: WorldUnitVector2,
+  opacity = 0.2,
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = `rgba(0,0,255,${opacity})`;
+
+  const vpX = cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp;
+  const vpY = cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp;
+  const halfW = wh.x / 2;
+  const halfH = wh.y / 2;
+
+  const x = vpX - halfW;
+  const y = vpY - halfH;
+  const w = wh.x;
+  const h = wh.y;
+
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
 }
 
 class LevelMan {
@@ -594,7 +648,7 @@ class Level0 extends Entity {
     super(eman);
 
     const t1 = new TextEntity(eman);
-    t1.setText('Click to Start', vv2(50, -50), 30);
+    t1.setText('Click to Start', wv2(0, 0), 30);
 
     const { vp, levelMan } = context;
 
@@ -620,13 +674,13 @@ class Level1 extends Entity {
     super(eman);
     const c1 = new Circle(eman);
     const t1 = new TextEntity(eman);
-    t1.setText('Hello', vv2(50, 0), 30);
-    t1.movement.acel.y = asViewportUnits(-1);
+    t1.setText('Hello', wv2(0, 0), 30);
+    t1.movement.acel.y = asWorldUnits(1);
 
-    this.ship = new Ship(eman);
+    this.ship = new Ship(eman, context.vp.camera);
 
     const h0 = new HoveringCircle(eman);
-    const h1 = new HoveringCircle(eman, vv2(9, 0));
+    const h1 = new HoveringCircle(eman, wv2(9, 0));
     h1.mode = 'tween';
 
     addEventListener(
@@ -641,25 +695,15 @@ class Level1 extends Entity {
         const cvsLocalX = ev.clientX - rect.left;
         const cvsLocalY = ev.clientY - rect.top;
 
-        // vp space
-        const vpLocalX = toViewportUnits(vp.v, cvsLocalX);
-        const vpLocalY = toViewportUnits(vp.v, cvsLocalY);
-
-        // camera space
-        const vpFrustrumizedX = vpLocalX - vp.v.camera.frustrum.x;
-        const vpFrustrumizedY = vpLocalY - vp.v.camera.frustrum.y;
-
-        // world space
-        const worldX = vp.v.camera.target.x + vpFrustrumizedX;
-        const worldY = vp.v.camera.target.y - vpFrustrumizedY;
-
-        const cameraSpace = vv2(vpFrustrumizedX, vpFrustrumizedY);
-        const worldSpace = vv2(worldX, worldY);
-
-        console.log(vp.v.camera.target, cameraSpace, worldSpace);
+        const worldSpace = vp.camera.screenToWorld(
+          asPixels(cvsLocalX),
+          asPixels(cvsLocalY),
+          vp.v.width,
+          vp.v.height,
+        );
 
         // distance from center of screen (aka camera) to picked point
-        const d = distance(cameraSpace, vv2(0, 0));
+        const d = distance(worldSpace, vp.camera.getPosition());
 
         // shake according to distance
         shaker.shake(d, 200, 0);
@@ -716,11 +760,22 @@ class App implements Destroyable {
         eman.update(dt);
       },
       draw: (interp) => {
-        clearScreen(vp.v);
+        const ctx = vp.v.dprCanvas.ctx;
+        ctx.clearRect(
+          0,
+          0,
+          vp.v.dprCanvas.cvs.width,
+          vp.v.dprCanvas.cvs.height,
+        );
+
+        ctx.save();
+        vp.camera.applyToContext(ctx, vp.v.width, vp.v.height);
+
         shaker.specialDraw(interp, vp, 'before');
         eman.draw(interp, vp);
         DrawDebugCamera()(vp);
         shaker.specialDraw(interp, vp, 'after');
+        ctx.restore();
       },
     });
     this.stop = stop;
@@ -733,9 +788,13 @@ class App implements Destroyable {
       'keydown',
       (ev) => {
         if (ev.key === 'ArrowRight') {
-          vp.v.camera.target.x = (1 + vp.v.camera.target.x) as ViewportUnits;
+          vp.camera.move(asWorldUnits(1), asWorldUnits(0));
         } else if (ev.key === 'ArrowLeft') {
-          vp.v.camera.target.x = (-1 + vp.v.camera.target.x) as ViewportUnits;
+          vp.camera.move(asWorldUnits(-1), asWorldUnits(0));
+        } else if (ev.key === 'ArrowUp') {
+          vp.camera.rotate(asWorldUnits(0.01));
+        } else if (ev.key === 'ArrowDown') {
+          vp.camera.rotate(asWorldUnits(-0.01));
         }
       },
       { signal: this.eventsOff.signal },

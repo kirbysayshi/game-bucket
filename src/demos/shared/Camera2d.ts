@@ -1,11 +1,19 @@
-type Pixels = number & { _isPixels: true };
+import { copy, v2, Vector2 } from 'pocket-physics';
+
+export type Pixels = number & { _isPixels: true };
 export function asPixels(n: number) {
   return n as Pixels;
 }
 
-type WorldUnits = number & { _isWorldUnits: true };
+export type WorldUnits<T = number> = T & { _isWorldUnits: true };
 export function asWorldUnits(n: number) {
   return n as WorldUnits;
+}
+
+export type WorldUnitVector2 = Vector2<WorldUnits>;
+
+export function wv2(x: number = 0, y: number = 0) {
+  return v2(x, y) as WorldUnitVector2;
 }
 
 export class Camera2D {
@@ -50,7 +58,7 @@ export class Camera2D {
     screenY: Pixels,
     viewportWidth: Pixels,
     viewportHeight: Pixels,
-    out = { x: 0, y: 0 },
+    out = wv2(),
   ) {
     // Step 1: Undo frustum transformation
     let x = (screenX / viewportWidth - 0.5) * this.width;
@@ -66,8 +74,8 @@ export class Camera2D {
     let worldX = rotatedX + this.x;
     let worldY = rotatedY + this.y;
 
-    out.x = worldX;
-    out.y = worldY;
+    out.x = asWorldUnits(worldX);
+    out.y = asWorldUnits(worldY);
 
     return out;
   }
@@ -75,6 +83,17 @@ export class Camera2D {
   move(dx: WorldUnits, dy: WorldUnits) {
     this.x = asWorldUnits(this.x + dx);
     this.y = asWorldUnits(this.y + dy);
+  }
+
+  setPosition(pos: WorldUnitVector2) {
+    this.x = pos.x;
+    this.y = pos.y;
+  }
+
+  getPosition(out = wv2()) {
+    out.x = this.x;
+    out.y = this.y;
+    return out;
   }
 
   rotate(angle: WorldUnits) {
@@ -127,14 +146,30 @@ export class Camera2D {
     // Move back by the camera's position
     ctx.translate(-this.x, -this.y);
   }
+
+  calculateFontSize(viewportHeight: Pixels, lines: number) {
+    // Calculate the height of each line in world units
+    let lineHeight = this.height / lines;
+
+    // Convert line height to viewport units
+    const vpUnits = (lineHeight / this.height) * viewportHeight;
+
+    // It's way too large, so scale it down somwwhat arbitrarily
+    const factor = 0.1;
+
+    return vpUnits * factor;
+  }
 }
 
-export function drawWorldText(
+export function drawWorldText2(
   ctx: CanvasRenderingContext2D,
+  camera: Camera2D,
+  viewportHeight: Pixels,
   text: string,
   x: WorldUnits,
   y: WorldUnits,
-  cameraRotation: WorldUnits,
+  maxLinesPerCanvas: number,
+  style: (ctx: CanvasRenderingContext2D, fontSizePx: number) => void,
 ) {
   ctx.save();
 
@@ -142,16 +177,48 @@ export function drawWorldText(
   ctx.translate(x, y);
 
   // Counter-rotate the text
-  ctx.rotate(cameraRotation);
+  ctx.rotate(camera.getRotation());
 
-  // Set text properties
-  ctx.fillStyle = 'black';
-  ctx.font = '20px Arial';
-  // ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  // Calculate the font size
+  let fontSize = camera.calculateFontSize(viewportHeight, maxLinesPerCanvas);
+
+  style?.(ctx, fontSize);
 
   // Draw the text
   ctx.fillText(text, 0, 0);
 
+  ctx.restore();
+}
+
+export function drawScreenText(
+  ctx: CanvasRenderingContext2D,
+  camera: Camera2D,
+  viewportHeight: Pixels,
+  text: string,
+  x: Pixels,
+  y: Pixels,
+  maxLinesPerCanvas: number,
+  style: (ctx: CanvasRenderingContext2D, fontSizePx: number) => void,
+) {
+  // Save the current context state
+  ctx.save();
+
+  // Reset the transformation matrix to the identity matrix
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  let fontSize = camera.calculateFontSize(viewportHeight, maxLinesPerCanvas);
+
+  style?.(ctx, fontSize);
+
+  // Set text properties
+  ctx.fillStyle = 'black';
+  ctx.font = `${fontSize}px Arial`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+
+  // Draw the text
+  ctx.fillText(text, x, y);
+
+  // Restore the context state
   ctx.restore();
 }

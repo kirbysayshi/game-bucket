@@ -4,7 +4,8 @@ import {
   asPixels,
   asWorldUnits,
   Camera2D,
-  drawWorldText,
+  drawScreenText,
+  drawWorldText2,
 } from '../shared/Camera2d';
 import { makeDPRCanvas } from '../../canvas';
 import { usePrimaryCanvas } from '../../dom';
@@ -26,10 +27,7 @@ class App {
   eventsOff = new AbortController();
 
   dprCanvas = makeDPRCanvas(400, 400, usePrimaryCanvas());
-  camera = new Camera2D(
-    asWorldUnits(this.dprCanvas.width),
-    asWorldUnits(this.dprCanvas.height),
-  );
+  camera = new Camera2D(asWorldUnits(100), asWorldUnits(100));
 
   constructor() {}
 
@@ -75,12 +73,32 @@ class App {
           rect2.height,
         );
 
-        drawWorldText(
+        drawWorldText2(
           this.dprCanvas.ctx,
+          this.camera,
+          asPixels(this.dprCanvas.height),
           'World Space Text',
           asWorldUnits(30),
           asWorldUnits(10),
-          this.camera.getRotation(),
+          2,
+          (ctx, fontSizePx) => {
+            ctx.font = `${fontSizePx}px sans-serif`;
+            ctx.fillStyle = 'black';
+          },
+        );
+
+        drawScreenText(
+          this.dprCanvas.ctx,
+          this.camera,
+          asPixels(this.dprCanvas.height),
+          'Screen Space Text',
+          asPixels(0),
+          asPixels(0),
+          20,
+          (ctx, fontSizePx) => {
+            ctx.font = `${fontSizePx}px sans-serif`;
+            ctx.fillStyle = 'black';
+          },
         );
 
         this.dprCanvas.ctx.restore();
