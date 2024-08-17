@@ -1,6 +1,7 @@
 import {
   Integratable,
   Vector2,
+  VelocityDerivable,
   accelerate,
   inertia,
   sub,
@@ -19,21 +20,20 @@ import {
   read,
   registerComponentMan,
 } from '../../ces5';
-import {
-  clearScreen,
-  drawTextLinesInViewport,
-  toViewportUnits,
-  vv2,
-} from '../../components/ViewportCmp';
 import { useRootElement } from '../../dom';
 import { createGameLoop } from '../../loop';
 import { DrawTimeHz, UpdateTimeHz } from '../../loopConstants';
 import { ViewportMan } from '../shared/viewport';
 import { getRandom } from '../../rng';
 import { range } from '../shared/range';
-import { debugDrawIntegratable } from '../../draw-utils';
 import { DrawDebugCamera } from '../shared/DrawDebugCamera';
 import { YellowRGBA } from '../../theme';
+import {
+  asPixels,
+  asWorldUnits,
+  drawScreenText,
+  WorldUnits,
+} from '../shared/Camera2d';
 
 let game: Game | null = null;
 
@@ -106,7 +106,16 @@ class Game {
         }
       },
       draw: (interp) => {
-        clearScreen(this.vp.v);
+        const ctx = this.vp.v.dprCanvas.ctx;
+
+        ctx.clearRect(0, 0, this.vp.v.width, this.vp.v.width);
+
+        ctx.save();
+        this.vp.camera.applyToContext(
+          ctx,
+          asPixels(this.vp.v.width),
+          asPixels(this.vp.v.height),
+        );
 
         {
           const data = this.screenShake.info();
@@ -116,29 +125,34 @@ class Game {
           }
         }
 
-        DrawDebugCamera()(this.vp);
         {
           const eid = firstEntity(this.circleman);
           const vint = this.movement.integratable(eid);
           const radius = read(this.circleman, eid, 'radius');
           if (vint && radius) {
             debugDrawIntegratable(
-              this.vp.v,
               this.vp.v.dprCanvas.ctx,
               vint,
               interp,
-              toViewportUnits(this.vp.v, radius),
+              asWorldUnits(radius),
             );
           }
         }
 
-        drawTextLinesInViewport(
-          this.vp.v,
+        drawScreenText(
+          this.vp.v.dprCanvas.ctx,
+          this.vp.camera,
+          asPixels(this.vp.v.dprCanvas.height),
           'Hello',
-          vv2(50, 0),
-          'center',
-          30,
-          YellowRGBA,
+          // TODO: this "looks" correct visually, but is it actually?
+          asPixels(this.vp.v.dprCanvas.cvs.width / 2),
+          asPixels(0),
+          20,
+          (ctx, fontSizePx) => {
+            ctx.font = `${fontSizePx}px sans-serif`;
+            ctx.fillStyle = YellowRGBA;
+            ctx.textAlign = 'center';
+          },
         );
 
         {
@@ -148,6 +162,8 @@ class Game {
             this.vp.v.dprCanvas.ctx.translate(-data.offset.x, -data.offset.y);
           }
         }
+
+        ctx.restore();
       },
       onPanic() {
         if (process.env.NODE_ENV !== 'production') {
@@ -282,4 +298,25 @@ class ScreenShakeSystem implements Updatable, Destroyable {
     const data = eid ? read(this.screenShakeMan, eid, 'output') : null;
     return data;
   }
+}
+
+export function debugDrawIntegratable(
+  ctx: CanvasRenderingContext2D,
+  cmp: VelocityDerivable,
+  interp: number,
+  radius: WorldUnits = asWorldUnits(1),
+  opacity: number = 0.2,
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = `rgba(0,0,255,${opacity})`;
+  ctx.arc(
+    cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp,
+    cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp,
+    radius,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fill();
+  ctx.restore();
 }

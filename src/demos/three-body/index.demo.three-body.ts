@@ -1,5 +1,6 @@
 import {
   Integratable,
+  VelocityDerivable,
   accelerate,
   distance,
   inertia,
@@ -24,14 +25,7 @@ import { createGameLoop } from '../../loop';
 import { DrawTimeHz, UpdateTimeHz } from '../../loopConstants';
 import { ViewportMan } from '../shared/viewport';
 import { useRootElement } from '../../dom';
-import { DrawDebugCamera } from '../shared/DrawDebugCamera';
-import {
-  clearScreen,
-  moveViewportCamera,
-  toViewportUnits,
-  vv2,
-} from '../../components/ViewportCmp';
-import { debugDrawIntegratable } from '../../draw-utils';
+import { asPixels, asWorldUnits, WorldUnits } from '../shared/Camera2d';
 
 let world: World | null = null;
 
@@ -99,11 +93,23 @@ class World {
     registerComponentMan(this.eman, this.phyman, this.circleman);
 
     this.draws.push(
-      () => clearScreen(this.vp.v),
-      () => DrawDebugCamera()(this.vp),
+      () =>
+        this.vp.v.dprCanvas.ctx.clearRect(
+          0,
+          0,
+          this.vp.v.width,
+          this.vp.v.height,
+        ),
+      () =>
+        this.vp.camera.applyToContext(
+          this.vp.v.dprCanvas.ctx,
+          asPixels(this.vp.v.width),
+          asPixels(this.vp.v.height),
+        ),
+      // () => DrawDebugCamera()(this.vp),
     );
 
-    moveViewportCamera(this.vp.v, vv2(0, 0));
+    this.vp.camera.move(asWorldUnits(0), asWorldUnits(0));
 
     {
       const eid = createEntity(this.eman);
@@ -131,7 +137,7 @@ class World {
         },
       });
       addComponent(this.circleman, eid, {
-        radius: 10,
+        radius: 1,
       });
     }
 
@@ -146,7 +152,7 @@ class World {
         },
       });
       addComponent(this.circleman, eid, {
-        radius: 10,
+        radius: 1,
       });
     }
   }
@@ -188,6 +194,7 @@ class World {
   }
 
   draw(interp: number) {
+    this.vp.v.dprCanvas.ctx.save();
     this.draws.forEach((draw) => draw(interp));
 
     const pos = v2();
@@ -198,12 +205,34 @@ class World {
       sub(pos, vint.cpos, vint.ppos);
 
       debugDrawIntegratable(
-        this.vp.v,
         this.vp.v.dprCanvas.ctx,
         vint,
         interp,
-        toViewportUnits(this.vp.v, radius),
+        asWorldUnits(radius),
       );
     });
+
+    this.vp.v.dprCanvas.ctx.restore();
   }
+}
+
+export function debugDrawIntegratable(
+  ctx: CanvasRenderingContext2D,
+  cmp: VelocityDerivable,
+  interp: number,
+  radius: WorldUnits = asWorldUnits(1),
+  opacity: number = 0.2,
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = `rgba(0,0,255,${opacity})`;
+  ctx.arc(
+    cmp.ppos.x + (cmp.cpos.x - cmp.ppos.x) * interp,
+    cmp.ppos.y + (cmp.cpos.y - cmp.ppos.y) * interp,
+    radius,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fill();
+  ctx.restore();
 }

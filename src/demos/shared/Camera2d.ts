@@ -147,15 +147,14 @@ export class Camera2D {
     ctx.translate(-this.x, -this.y);
   }
 
-  calculateFontSize(viewportHeight: Pixels, lines: number) {
+  calculateFontSize(viewportHeight: Pixels, lines: number, factor: number) {
     // Calculate the height of each line in world units
     let lineHeight = this.height / lines;
 
     // Convert line height to viewport units
     const vpUnits = (lineHeight / this.height) * viewportHeight;
 
-    // It's way too large, so scale it down somwwhat arbitrarily
-    const factor = 0.1;
+    // It's way too large, so scale it down somwwhat arbitrarily using FACTOR
 
     return vpUnits * factor;
   }
@@ -180,7 +179,11 @@ export function drawWorldText2(
   ctx.rotate(camera.getRotation());
 
   // Calculate the font size
-  let fontSize = camera.calculateFontSize(viewportHeight, maxLinesPerCanvas);
+  let fontSize = camera.calculateFontSize(
+    viewportHeight,
+    maxLinesPerCanvas,
+    0.1,
+  );
 
   style?.(ctx, fontSize);
 
@@ -206,7 +209,7 @@ export function drawScreenText(
   // Reset the transformation matrix to the identity matrix
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  let fontSize = camera.calculateFontSize(viewportHeight, maxLinesPerCanvas);
+  let fontSize = camera.calculateFontSize(viewportHeight, maxLinesPerCanvas, 1);
 
   style?.(ctx, fontSize);
 

@@ -26,8 +26,8 @@ type Viewport = {
   ratio: number;
   width: Pixels;
   height: Pixels;
-  vpWidth: WorldUnits<100>;
-  vpHeight: WorldUnits;
+  // vpWidth: WorldUnits<100>;
+  // vpHeight: WorldUnits;
   dprCanvas: DPRCanvas;
 };
 
@@ -53,8 +53,8 @@ export function deriveViewportCmp(): Viewport {
     ratio,
     width: width as Pixels,
     height: height as Pixels,
-    vpWidth: asWorldUnits(100) as WorldUnits<100>,
-    vpHeight: asWorldUnits(100 / 0.6),
+    // vpWidth: asWorldUnits(100) as WorldUnits<100>,
+    // vpHeight: asWorldUnits(100 / 0.6),
     dprCanvas,
   };
 }
