@@ -143,9 +143,16 @@ class EntityMan<T extends Entity = Entity> {
       e.draw?.(interp, vp);
     }
   }
+
+  destroy() {
+    for (const e of this.entities) {
+      e.destroy?.();
+    }
+    this.eidman.destroy();
+  }
 }
 
-export function makeIntegratable(initial = wv2()) {
+function makeIntegratable(initial = wv2()) {
   return {
     cpos: copy(wv2(), initial),
     ppos: copy(wv2(), initial),
@@ -756,7 +763,6 @@ class App implements Destroyable {
 
         shaker.specialDraw(interp, vp, 'before');
         eman.draw(interp, vp);
-        DrawDebugCamera()(vp);
         shaker.specialDraw(interp, vp, 'after');
         ctx.restore();
       },
@@ -786,5 +792,7 @@ class App implements Destroyable {
 
   async destroy() {
     this.stop();
+    this.eventsOff.abort();
+    this.context.eman.destroy();
   }
 }
