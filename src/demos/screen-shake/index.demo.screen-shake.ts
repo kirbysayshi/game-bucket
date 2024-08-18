@@ -106,22 +106,22 @@ class Game {
         }
       },
       draw: (interp) => {
-        const ctx = this.vp.v.dprCanvas.ctx;
+        const ctx = this.vp.canvas.ctx;
 
-        ctx.clearRect(0, 0, this.vp.v.width, this.vp.v.width);
+        ctx.clearRect(0, 0, this.vp.canvas.width, this.vp.canvas.height);
 
         ctx.save();
         this.vp.camera.applyToContext(
           ctx,
-          asPixels(this.vp.v.width),
-          asPixels(this.vp.v.height),
+          asPixels(this.vp.canvas.width),
+          asPixels(this.vp.canvas.height),
         );
 
         {
           const data = this.screenShake.info();
           if (data) {
-            this.vp.v.dprCanvas.ctx.translate(data.offset.x, data.offset.y);
-            this.vp.v.dprCanvas.ctx.rotate(data.rotation);
+            this.vp.canvas.ctx.translate(data.offset.x, data.offset.y);
+            this.vp.canvas.ctx.rotate(data.rotation);
           }
         }
 
@@ -131,7 +131,7 @@ class Game {
           const radius = read(this.circleman, eid, 'radius');
           if (vint && radius) {
             debugDrawIntegratable(
-              this.vp.v.dprCanvas.ctx,
+              this.vp.canvas.ctx,
               vint,
               interp,
               asWorldUnits(radius),
@@ -140,12 +140,12 @@ class Game {
         }
 
         drawScreenText(
-          this.vp.v.dprCanvas.ctx,
+          this.vp.canvas.ctx,
           this.vp.camera,
-          asPixels(this.vp.v.dprCanvas.height),
+          asPixels(this.vp.canvas.height),
           'Hello',
           // TODO: this "looks" correct visually, but is it actually?
-          asPixels(this.vp.v.dprCanvas.cvs.width / 2),
+          asPixels(this.vp.canvas.cvs.width / 2),
           asPixels(0),
           20,
           (ctx, fontSizePx) => {
@@ -158,8 +158,8 @@ class Game {
         {
           const data = this.screenShake.info();
           if (data) {
-            this.vp.v.dprCanvas.ctx.rotate(-data.rotation);
-            this.vp.v.dprCanvas.ctx.translate(-data.offset.x, -data.offset.y);
+            this.vp.canvas.ctx.rotate(-data.rotation);
+            this.vp.canvas.ctx.translate(-data.offset.x, -data.offset.y);
           }
         }
 

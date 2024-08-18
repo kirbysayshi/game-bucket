@@ -94,17 +94,17 @@ class World {
 
     this.draws.push(
       () =>
-        this.vp.v.dprCanvas.ctx.clearRect(
+        this.vp.canvas.ctx.clearRect(
           0,
           0,
-          this.vp.v.width,
-          this.vp.v.height,
+          this.vp.canvas.width,
+          this.vp.canvas.height,
         ),
       () =>
         this.vp.camera.applyToContext(
-          this.vp.v.dprCanvas.ctx,
-          asPixels(this.vp.v.width),
-          asPixels(this.vp.v.height),
+          this.vp.canvas.ctx,
+          asPixels(this.vp.canvas.width),
+          asPixels(this.vp.canvas.height),
         ),
       // () => DrawDebugCamera()(this.vp),
     );
@@ -194,7 +194,7 @@ class World {
   }
 
   draw(interp: number) {
-    this.vp.v.dprCanvas.ctx.save();
+    this.vp.canvas.ctx.save();
     this.draws.forEach((draw) => draw(interp));
 
     const pos = v2();
@@ -205,14 +205,14 @@ class World {
       sub(pos, vint.cpos, vint.ppos);
 
       debugDrawIntegratable(
-        this.vp.v.dprCanvas.ctx,
+        this.vp.canvas.ctx,
         vint,
         interp,
         asWorldUnits(radius),
       );
     });
 
-    this.vp.v.dprCanvas.ctx.restore();
+    this.vp.canvas.ctx.restore();
   }
 }
 

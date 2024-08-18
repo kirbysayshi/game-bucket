@@ -3,18 +3,24 @@ import { usePrimaryCanvas } from '../../dom';
 import { asWorldUnits, Camera2D, Pixels, WorldUnits, wv2 } from './Camera2d';
 
 export class ViewportMan {
-  v = deriveViewportCmp();
   camera = new Camera2D(asWorldUnits(100), asWorldUnits(100));
+  canvas;
   private aborter = new AbortController();
 
   constructor(getRootElement: () => HTMLElement) {
-    this.v = deriveViewportCmp();
+    const initial = deriveCanvasSizeFromWindow();
+    this.canvas = makeDPRCanvas(
+      initial.width,
+      initial.height,
+      usePrimaryCanvas(),
+    );
+
     window.addEventListener(
       'resize',
-      () => computeWindowResize(getRootElement),
+      () => handleWindowResize(getRootElement),
       { signal: this.aborter.signal },
     );
-    computeWindowResize(getRootElement);
+    handleWindowResize(getRootElement);
   }
 
   destroy() {
@@ -22,16 +28,7 @@ export class ViewportMan {
   }
 }
 
-type Viewport = {
-  ratio: number;
-  width: Pixels;
-  height: Pixels;
-  // vpWidth: WorldUnits<100>;
-  // vpHeight: WorldUnits;
-  dprCanvas: DPRCanvas;
-};
-
-export function deriveViewportCmp(): Viewport {
+function deriveCanvasSizeFromWindow() {
   const ratio = 1;
 
   // if the window is taller than wide, use the window width for the width.
@@ -48,19 +45,11 @@ export function deriveViewportCmp(): Viewport {
       ? window.innerWidth / ratio
       : window.innerHeight;
 
-  const dprCanvas = makeDPRCanvas(width, height, usePrimaryCanvas());
-  return {
-    ratio,
-    width: width as Pixels,
-    height: height as Pixels,
-    // vpWidth: asWorldUnits(100) as WorldUnits<100>,
-    // vpHeight: asWorldUnits(100 / 0.6),
-    dprCanvas,
-  };
+  return { width, height };
 }
 
-function computeWindowResize(getRootElement: () => HTMLElement) {
-  const cmp = deriveViewportCmp();
+function handleWindowResize(getRootElement: () => HTMLElement) {
+  const cmp = deriveCanvasSizeFromWindow();
 
   // TODO: consider hand-rolling a ctx.save/restore that only manages the
   // transform using .getTransform and .setTransform. Lots of perf time taken up
@@ -69,12 +58,6 @@ function computeWindowResize(getRootElement: () => HTMLElement) {
   const root = getRootElement();
   root.style.width = cmp.width + 'px';
 
-  // const toPx = (n: number) =>
-  //   Math.floor((n / cmp.vpWidth) * cmp.dprCanvas.width);
-  // cmp.dprCanvas.ctx.translate(
-  //   toPx(cmp.camera.frustrum.x),
-  //   toPx(cmp.camera.frustrum.y),
-  // );
   // Force +y to be UP. Remember to reverse when writing text or image!
   // https://usefulangle.com/post/18/javascript-html5-canvas-solving-problem-of-inverted-text-when-y-axis-flipped
   // cmp.dprCanvas.ctx.scale(1, -1);

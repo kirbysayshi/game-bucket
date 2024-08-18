@@ -163,12 +163,7 @@ class Circle extends Entity {
   }
 
   draw(interp: number, vp: ViewportMan) {
-    debugDrawIntegratable(
-      vp.v.dprCanvas.ctx,
-      this.movement,
-      interp,
-      this.radius,
-    );
+    debugDrawIntegratable(vp.canvas.ctx, this.movement, interp, this.radius);
   }
 }
 
@@ -225,11 +220,11 @@ class ScreenShake extends Entity {
 
   specialDraw(interp: number, vp: ViewportMan, stage: 'before' | 'after') {
     if (stage === 'before') {
-      vp.v.dprCanvas.ctx.translate(this.offset.x, this.offset.y);
-      vp.v.dprCanvas.ctx.rotate(this.rotation);
+      vp.canvas.ctx.translate(this.offset.x, this.offset.y);
+      vp.canvas.ctx.rotate(this.rotation);
     } else {
-      vp.v.dprCanvas.ctx.rotate(-this.rotation);
-      vp.v.dprCanvas.ctx.translate(-this.offset.x, -this.offset.y);
+      vp.canvas.ctx.rotate(-this.rotation);
+      vp.canvas.ctx.translate(-this.offset.x, -this.offset.y);
     }
   }
 }
@@ -254,7 +249,7 @@ class TextEntity extends Entity {
 
   draw(interp: number, vp: ViewportMan) {
     // drawWorldText(
-    //   vp.v.dprCanvas.ctx,
+    //   vp.canvas.ctx,
     //   vp.camera.getRotation(),
     //   this.text,
     //   this.movement.cpos.x,
@@ -263,9 +258,9 @@ class TextEntity extends Entity {
     //   'center',
     // );
     drawWorldText2(
-      vp.v.dprCanvas.ctx,
+      vp.canvas.ctx,
       vp.camera,
-      vp.v.height,
+      asPixels(vp.canvas.height),
       this.text,
       this.movement.cpos.x,
       this.movement.cpos.y,
@@ -312,7 +307,7 @@ class ParticleEntity extends Entity {
 
   draw(interp: number, vp: ViewportMan) {
     debugDrawIntegratable(
-      vp.v.dprCanvas.ctx,
+      vp.canvas.ctx,
       this.movement,
       interp,
       this.radius,
@@ -361,12 +356,7 @@ class Ship extends Entity {
   }
 
   draw(interp: number, vp: ViewportMan) {
-    debugDrawIntegratable(
-      vp.v.dprCanvas.ctx,
-      this.movement,
-      interp,
-      this.radius,
-    );
+    debugDrawIntegratable(vp.canvas.ctx, this.movement, interp, this.radius);
 
     // draw a nub to represent the rotation direction of the ship
 
@@ -384,7 +374,7 @@ class Ship extends Entity {
     add(vd.cpos, vd.cpos, this.movement.cpos);
     add(vd.ppos, vd.ppos, this.movement.ppos);
 
-    debugDrawIntegratable(vp.v.dprCanvas.ctx, vd, interp, asWorldUnits(0.5));
+    debugDrawIntegratable(vp.canvas.ctx, vd, interp, asWorldUnits(0.5));
   }
 
   translate(dir: 'forward' | 'back' | 'left' | 'right') {
@@ -453,12 +443,7 @@ class HoveringCircle extends Entity {
   }
 
   draw(interp: number, vp: ViewportMan) {
-    debugDrawIntegratable(
-      vp.v.dprCanvas.ctx,
-      this.movement,
-      interp,
-      this.radius,
-    );
+    debugDrawIntegratable(vp.canvas.ctx, this.movement, interp, this.radius);
   }
 }
 
@@ -594,7 +579,7 @@ class SceneTransition extends Entity {
 
   draw(interp: number, vp: ViewportMan) {
     debugDrawIntegratableRect(
-      vp.v.dprCanvas.ctx,
+      vp.canvas.ctx,
       this.movement,
       interp,
       this.wh,
@@ -648,11 +633,11 @@ class Level0 extends Entity {
     super(eman);
 
     const t1 = new TextEntity(eman);
-    t1.setText('Click to Start', wv2(0, 0), 30);
+    t1.setText('Click to Start!', wv2(0, 0), 30);
 
     const { vp, levelMan } = context;
 
-    vp.v.dprCanvas.cvs.addEventListener(
+    vp.canvas.cvs.addEventListener(
       'click',
       () => {
         new SceneTransition(eman, vp, () => {
@@ -691,15 +676,15 @@ class Level1 extends Entity {
         // How to pick from screen space to world:
 
         // canvas/element space
-        const rect = vp.v.dprCanvas.cvs.getBoundingClientRect();
+        const rect = vp.canvas.cvs.getBoundingClientRect();
         const cvsLocalX = ev.clientX - rect.left;
         const cvsLocalY = ev.clientY - rect.top;
 
         const worldSpace = vp.camera.screenToWorld(
           asPixels(cvsLocalX),
           asPixels(cvsLocalY),
-          vp.v.width,
-          vp.v.height,
+          asPixels(vp.canvas.width),
+          asPixels(vp.canvas.height),
         );
 
         // distance from center of screen (aka camera) to picked point
@@ -760,16 +745,15 @@ class App implements Destroyable {
         eman.update(dt);
       },
       draw: (interp) => {
-        const ctx = vp.v.dprCanvas.ctx;
-        ctx.clearRect(
-          0,
-          0,
-          vp.v.dprCanvas.cvs.width,
-          vp.v.dprCanvas.cvs.height,
-        );
+        const ctx = vp.canvas.ctx;
+        ctx.clearRect(0, 0, vp.canvas.width, vp.canvas.height);
 
         ctx.save();
-        vp.camera.applyToContext(ctx, vp.v.width, vp.v.height);
+        vp.camera.applyToContext(
+          ctx,
+          asPixels(vp.canvas.width),
+          asPixels(vp.canvas.height),
+        );
 
         shaker.specialDraw(interp, vp, 'before');
         eman.draw(interp, vp);

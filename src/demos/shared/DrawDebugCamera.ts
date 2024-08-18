@@ -10,11 +10,11 @@ import { ViewportMan } from './viewport';
 export const DrawDebugCamera = () => (vp: ViewportMan) => {
   if (!useDebugMode()) return;
 
-  const {
-    dprCanvas: { ctx },
-  } = vp.v;
+  // const {
+  //   dprCanvas: { ctx },
+  // } = vp.v;
 
-  ctx.save();
+  // ctx.save();
   // ctx.strokeStyle = 'purple';
   // ctx.fillStyle = 'green';
   // ctx.lineWidth = asPixels(5);
@@ -44,5 +44,5 @@ export const DrawDebugCamera = () => (vp: ViewportMan) => {
   //   toPixelUnits(vp.v, asViewportUnits(camera.frustrum.y * 2)),
   // );
 
-  ctx.restore();
+  // ctx.restore();
 };
