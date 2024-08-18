@@ -160,7 +160,7 @@ export class Camera2D {
   }
 }
 
-export function drawWorldText2(
+export function drawWorldText(
   ctx: CanvasRenderingContext2D,
   camera: Camera2D,
   viewportHeight: Pixels,
@@ -193,7 +193,7 @@ export function drawWorldText2(
   ctx.restore();
 }
 
-export function drawScreenText(
+export function drawCameraText(
   ctx: CanvasRenderingContext2D,
   camera: Camera2D,
   viewportHeight: Pixels,

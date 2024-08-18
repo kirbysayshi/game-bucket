@@ -23,7 +23,7 @@ import {
 import { useRootElement } from '../../dom';
 import { createGameLoop } from '../../loop';
 import { DrawTimeHz, UpdateTimeHz } from '../../loopConstants';
-import { ViewportMan } from '../shared/viewport';
+import { CanvasCameraMan } from '../shared/CameraCanvasMan';
 import { getRandom } from '../../rng';
 import { range } from '../shared/range';
 import { DrawDebugCamera } from '../shared/DrawDebugCamera';
@@ -31,7 +31,7 @@ import { YellowRGBA } from '../../theme';
 import {
   asPixels,
   asWorldUnits,
-  drawScreenText,
+  drawCameraText,
   WorldUnits,
 } from '../shared/Camera2d';
 
@@ -62,7 +62,7 @@ class Game {
 
   circlesQ = new Query([this.movement.phyman, this.circleman]);
 
-  vp = new ViewportMan(useRootElement);
+  vp = new CanvasCameraMan(useRootElement);
 
   stopLoop: () => void = () => {};
   eventsOff = new AbortController();
@@ -106,22 +106,22 @@ class Game {
         }
       },
       draw: (interp) => {
-        const ctx = this.vp.canvas.ctx;
+        const ctx = this.vp.ctx;
 
-        ctx.clearRect(0, 0, this.vp.canvas.width, this.vp.canvas.height);
+        ctx.clearRect(0, 0, this.vp.width, this.vp.height);
 
         ctx.save();
         this.vp.camera.applyToContext(
           ctx,
-          asPixels(this.vp.canvas.width),
-          asPixels(this.vp.canvas.height),
+          asPixels(this.vp.width),
+          asPixels(this.vp.height),
         );
 
         {
           const data = this.screenShake.info();
           if (data) {
-            this.vp.canvas.ctx.translate(data.offset.x, data.offset.y);
-            this.vp.canvas.ctx.rotate(data.rotation);
+            this.vp.ctx.translate(data.offset.x, data.offset.y);
+            this.vp.ctx.rotate(data.rotation);
           }
         }
 
@@ -131,7 +131,7 @@ class Game {
           const radius = read(this.circleman, eid, 'radius');
           if (vint && radius) {
             debugDrawIntegratable(
-              this.vp.canvas.ctx,
+              this.vp.ctx,
               vint,
               interp,
               asWorldUnits(radius),
@@ -139,13 +139,13 @@ class Game {
           }
         }
 
-        drawScreenText(
-          this.vp.canvas.ctx,
+        drawCameraText(
+          this.vp.ctx,
           this.vp.camera,
-          asPixels(this.vp.canvas.height),
+          asPixels(this.vp.height),
           'Hello',
           // TODO: this "looks" correct visually, but is it actually?
-          asPixels(this.vp.canvas.cvs.width / 2),
+          asPixels(this.vp.canvasElement.width / 2),
           asPixels(0),
           20,
           (ctx, fontSizePx) => {
@@ -158,8 +158,8 @@ class Game {
         {
           const data = this.screenShake.info();
           if (data) {
-            this.vp.canvas.ctx.rotate(-data.rotation);
-            this.vp.canvas.ctx.translate(-data.offset.x, -data.offset.y);
+            this.vp.ctx.rotate(-data.rotation);
+            this.vp.ctx.translate(-data.offset.x, -data.offset.y);
           }
         }
 

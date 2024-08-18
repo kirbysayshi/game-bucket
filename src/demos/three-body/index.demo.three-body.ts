@@ -23,7 +23,7 @@ import {
 } from '../../ces5';
 import { createGameLoop } from '../../loop';
 import { DrawTimeHz, UpdateTimeHz } from '../../loopConstants';
-import { ViewportMan } from '../shared/viewport';
+import { CanvasCameraMan } from '../shared/CameraCanvasMan';
 import { useRootElement } from '../../dom';
 import { asPixels, asWorldUnits, WorldUnits } from '../shared/Camera2d';
 
@@ -72,7 +72,7 @@ class Phyman extends ComponentManager<{
 }> {}
 
 class World {
-  vp = new ViewportMan(useRootElement);
+  vp = new CanvasCameraMan(useRootElement);
   eman = new EntityManager();
   phyman = new Phyman();
   circleman = new ComponentManager<{
@@ -93,19 +93,8 @@ class World {
     registerComponentMan(this.eman, this.phyman, this.circleman);
 
     this.draws.push(
-      () =>
-        this.vp.canvas.ctx.clearRect(
-          0,
-          0,
-          this.vp.canvas.width,
-          this.vp.canvas.height,
-        ),
-      () =>
-        this.vp.camera.applyToContext(
-          this.vp.canvas.ctx,
-          asPixels(this.vp.canvas.width),
-          asPixels(this.vp.canvas.height),
-        ),
+      () => this.vp.clear(),
+      () => this.vp.applyCamera(),
       // () => DrawDebugCamera()(this.vp),
     );
 
@@ -194,7 +183,7 @@ class World {
   }
 
   draw(interp: number) {
-    this.vp.canvas.ctx.save();
+    this.vp.ctx.save();
     this.draws.forEach((draw) => draw(interp));
 
     const pos = v2();
@@ -204,15 +193,10 @@ class World {
       if (!vint || !radius) return;
       sub(pos, vint.cpos, vint.ppos);
 
-      debugDrawIntegratable(
-        this.vp.canvas.ctx,
-        vint,
-        interp,
-        asWorldUnits(radius),
-      );
+      debugDrawIntegratable(this.vp.ctx, vint, interp, asWorldUnits(radius));
     });
 
-    this.vp.canvas.ctx.restore();
+    this.vp.ctx.restore();
   }
 }
 

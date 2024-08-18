@@ -2,9 +2,9 @@ import { DPRCanvas, makeDPRCanvas } from '../../canvas';
 import { usePrimaryCanvas } from '../../dom';
 import { asWorldUnits, Camera2D, Pixels, WorldUnits, wv2 } from './Camera2d';
 
-export class ViewportMan {
+export class CanvasCameraMan {
   camera = new Camera2D(asWorldUnits(100), asWorldUnits(100));
-  canvas;
+  private canvas;
   private aborter = new AbortController();
 
   constructor(getRootElement: () => HTMLElement) {
@@ -25,6 +25,30 @@ export class ViewportMan {
 
   destroy() {
     this.aborter.abort();
+  }
+
+  get width() {
+    return this.canvas.width as Pixels;
+  }
+
+  get height() {
+    return this.canvas.height as Pixels;
+  }
+
+  applyCamera() {
+    this.camera.applyToContext(this.canvas.ctx, this.width, this.height);
+  }
+
+  get ctx() {
+    return this.canvas.ctx;
+  }
+
+  get canvasElement() {
+    return this.canvas.cvs;
+  }
+
+  clear() {
+    this.canvas.ctx.clearRect(0, 0, this.width, this.height);
   }
 }
 

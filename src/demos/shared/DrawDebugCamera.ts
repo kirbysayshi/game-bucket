@@ -5,9 +5,9 @@ import {
   toProjectedPixels,
 } from '../../components/ViewportCmp';
 import { useDebugMode } from '../../query-string';
-import { ViewportMan } from './viewport';
+import { CanvasCameraMan } from './CameraCanvasMan';
 
-export const DrawDebugCamera = () => (vp: ViewportMan) => {
+export const DrawDebugCamera = () => (vp: CanvasCameraMan) => {
   if (!useDebugMode()) return;
 
   // const {

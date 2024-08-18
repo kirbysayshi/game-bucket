@@ -14,7 +14,7 @@ import {
   translate,
   v2,
 } from 'pocket-physics';
-import { ViewportMan } from '../shared/viewport';
+import { CanvasCameraMan } from '../shared/CameraCanvasMan';
 import { createGameLoop } from '../../loop';
 import { listen, useRootElement } from '../../dom';
 import { DrawDebugCamera } from '../shared/DrawDebugCamera';
@@ -26,7 +26,7 @@ import {
   asPixels,
   asWorldUnits,
   Camera2D,
-  drawWorldText2,
+  drawWorldText,
   WorldUnits,
   WorldUnitVector2,
   wv2,
@@ -86,7 +86,7 @@ interface Destroyable {
 }
 
 interface Drawable {
-  draw?(interp: number, vp: ViewportMan): void;
+  draw?(interp: number, vp: CanvasCameraMan): void;
 }
 
 interface Initable {
@@ -95,7 +95,7 @@ interface Initable {
 
 interface Entity {
   update?(dt: number): void;
-  draw?(interp: number, vp: ViewportMan): void;
+  draw?(interp: number, vp: CanvasCameraMan): void;
 }
 
 abstract class Entity implements Updatable, Destroyable, Drawable, Initable {
@@ -138,7 +138,7 @@ class EntityMan<T extends Entity = Entity> {
     }
   }
 
-  draw(interp: number, vp: ViewportMan) {
+  draw(interp: number, vp: CanvasCameraMan) {
     for (const e of this.entities) {
       e.draw?.(interp, vp);
     }
@@ -162,8 +162,8 @@ class Circle extends Entity {
     inertia(this.movement);
   }
 
-  draw(interp: number, vp: ViewportMan) {
-    debugDrawIntegratable(vp.canvas.ctx, this.movement, interp, this.radius);
+  draw(interp: number, vp: CanvasCameraMan) {
+    debugDrawIntegratable(vp.ctx, this.movement, interp, this.radius);
   }
 }
 
@@ -218,13 +218,13 @@ class ScreenShake extends Entity {
     }
   }
 
-  specialDraw(interp: number, vp: ViewportMan, stage: 'before' | 'after') {
+  specialDraw(interp: number, vp: CanvasCameraMan, stage: 'before' | 'after') {
     if (stage === 'before') {
-      vp.canvas.ctx.translate(this.offset.x, this.offset.y);
-      vp.canvas.ctx.rotate(this.rotation);
+      vp.ctx.translate(this.offset.x, this.offset.y);
+      vp.ctx.rotate(this.rotation);
     } else {
-      vp.canvas.ctx.rotate(-this.rotation);
-      vp.canvas.ctx.translate(-this.offset.x, -this.offset.y);
+      vp.ctx.rotate(-this.rotation);
+      vp.ctx.translate(-this.offset.x, -this.offset.y);
     }
   }
 }
@@ -247,9 +247,9 @@ class TextEntity extends Entity {
     inertia(this.movement);
   }
 
-  draw(interp: number, vp: ViewportMan) {
+  draw(interp: number, vp: CanvasCameraMan) {
     // drawWorldText(
-    //   vp.canvas.ctx,
+    //   vp.ctx,
     //   vp.camera.getRotation(),
     //   this.text,
     //   this.movement.cpos.x,
@@ -257,10 +257,10 @@ class TextEntity extends Entity {
     //   20,
     //   'center',
     // );
-    drawWorldText2(
-      vp.canvas.ctx,
+    drawWorldText(
+      vp.ctx,
       vp.camera,
-      asPixels(vp.canvas.height),
+      asPixels(vp.height),
       this.text,
       this.movement.cpos.x,
       this.movement.cpos.y,
@@ -305,9 +305,9 @@ class ParticleEntity extends Entity {
     }
   }
 
-  draw(interp: number, vp: ViewportMan) {
+  draw(interp: number, vp: CanvasCameraMan) {
     debugDrawIntegratable(
-      vp.canvas.ctx,
+      vp.ctx,
       this.movement,
       interp,
       this.radius,
@@ -355,8 +355,8 @@ class Ship extends Entity {
     this.camera.setPosition(this.movement.ppos);
   }
 
-  draw(interp: number, vp: ViewportMan) {
-    debugDrawIntegratable(vp.canvas.ctx, this.movement, interp, this.radius);
+  draw(interp: number, vp: CanvasCameraMan) {
+    debugDrawIntegratable(vp.ctx, this.movement, interp, this.radius);
 
     // draw a nub to represent the rotation direction of the ship
 
@@ -374,7 +374,7 @@ class Ship extends Entity {
     add(vd.cpos, vd.cpos, this.movement.cpos);
     add(vd.ppos, vd.ppos, this.movement.ppos);
 
-    debugDrawIntegratable(vp.canvas.ctx, vd, interp, asWorldUnits(0.5));
+    debugDrawIntegratable(vp.ctx, vd, interp, asWorldUnits(0.5));
   }
 
   translate(dir: 'forward' | 'back' | 'left' | 'right') {
@@ -442,8 +442,8 @@ class HoveringCircle extends Entity {
     }
   }
 
-  draw(interp: number, vp: ViewportMan) {
-    debugDrawIntegratable(vp.canvas.ctx, this.movement, interp, this.radius);
+  draw(interp: number, vp: CanvasCameraMan) {
+    debugDrawIntegratable(vp.ctx, this.movement, interp, this.radius);
   }
 }
 
@@ -543,7 +543,7 @@ class SceneTransition extends Entity {
 
   constructor(
     eman: EntityMan,
-    private vp: ViewportMan,
+    private vp: CanvasCameraMan,
     private onComplete: () => void,
   ) {
     super(eman);
@@ -577,9 +577,9 @@ class SceneTransition extends Entity {
     copy(this.movement.ppos, this.tween0.current);
   }
 
-  draw(interp: number, vp: ViewportMan) {
+  draw(interp: number, vp: CanvasCameraMan) {
     debugDrawIntegratableRect(
-      vp.canvas.ctx,
+      vp.ctx,
       this.movement,
       interp,
       this.wh,
@@ -637,7 +637,7 @@ class Level0 extends Entity {
 
     const { vp, levelMan } = context;
 
-    vp.canvas.cvs.addEventListener(
+    vp.canvasElement.addEventListener(
       'click',
       () => {
         new SceneTransition(eman, vp, () => {
@@ -676,15 +676,15 @@ class Level1 extends Entity {
         // How to pick from screen space to world:
 
         // canvas/element space
-        const rect = vp.canvas.cvs.getBoundingClientRect();
+        const rect = vp.canvasElement.getBoundingClientRect();
         const cvsLocalX = ev.clientX - rect.left;
         const cvsLocalY = ev.clientY - rect.top;
 
         const worldSpace = vp.camera.screenToWorld(
           asPixels(cvsLocalX),
           asPixels(cvsLocalY),
-          asPixels(vp.canvas.width),
-          asPixels(vp.canvas.height),
+          asPixels(vp.width),
+          asPixels(vp.height),
         );
 
         // distance from center of screen (aka camera) to picked point
@@ -714,7 +714,7 @@ class Level1 extends Entity {
 
 interface GameContext {
   eman: EntityMan;
-  vp: ViewportMan;
+  vp: CanvasCameraMan;
   shaker: ScreenShake;
   levelMan: LevelMan;
 }
@@ -728,7 +728,7 @@ class App implements Destroyable {
     const eman = new EntityMan();
     this.context = {
       eman,
-      vp: new ViewportMan(useRootElement),
+      vp: new CanvasCameraMan(useRootElement),
       shaker: new ScreenShake(eman),
       levelMan: new LevelMan(),
     };
@@ -745,15 +745,11 @@ class App implements Destroyable {
         eman.update(dt);
       },
       draw: (interp) => {
-        const ctx = vp.canvas.ctx;
-        ctx.clearRect(0, 0, vp.canvas.width, vp.canvas.height);
+        const ctx = vp.ctx;
+        ctx.clearRect(0, 0, vp.width, vp.height);
 
         ctx.save();
-        vp.camera.applyToContext(
-          ctx,
-          asPixels(vp.canvas.width),
-          asPixels(vp.canvas.height),
-        );
+        vp.camera.applyToContext(ctx, asPixels(vp.width), asPixels(vp.height));
 
         shaker.specialDraw(interp, vp, 'before');
         eman.draw(interp, vp);

@@ -4,8 +4,8 @@ import {
   asPixels,
   asWorldUnits,
   Camera2D,
-  drawScreenText,
-  drawWorldText2,
+  drawCameraText,
+  drawWorldText,
 } from '../shared/Camera2d';
 import { makeDPRCanvas } from '../../canvas';
 import { usePrimaryCanvas } from '../../dom';
@@ -73,7 +73,7 @@ class App {
           rect2.height,
         );
 
-        drawWorldText2(
+        drawWorldText(
           this.dprCanvas.ctx,
           this.camera,
           asPixels(this.dprCanvas.height),
@@ -87,7 +87,7 @@ class App {
           },
         );
 
-        drawScreenText(
+        drawCameraText(
           this.dprCanvas.ctx,
           this.camera,
           asPixels(this.dprCanvas.height),
