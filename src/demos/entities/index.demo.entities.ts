@@ -352,7 +352,7 @@ class Ship extends Entity {
     inertia(this.movement);
     solveDrag(this.movement, 0.9);
 
-    this.camera.setPosition(this.movement.ppos);
+    this.camera.setPosition(this.movement.cpos);
   }
 
   draw(interp: number, vp: CanvasCameraMan) {
@@ -745,6 +745,9 @@ class App implements Destroyable {
         eman.update(dt);
       },
       draw: (interp) => {
+        // override interp since update and draw time are the same
+        interp = 1;
+
         const ctx = vp.ctx;
         ctx.clearRect(0, 0, vp.width, vp.height);
 
